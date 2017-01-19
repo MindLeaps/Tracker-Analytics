@@ -8,17 +8,15 @@ module MindleapsAnalytics
       students = Student.all
       @x = Group.all
 
-      # chart series is a hash : {Group Name, Points[[]]}
-      # Points[[]] is a two-dimensional array
+      # let's create a hash with key group_id and data an empty array which will contain the points (x,y)
+      # we do this so we can create a data series per group in the scatter chart
       @groups = {}
       group_ids = students.group(:group_id).count.keys
       group_ids.each do |group_id|
         @groups[group_id.to_s.to_sym] = []
       end
 
-      @seriesA = []
-      # @seriesB = []
-
+      # now calculate the performance for each student
       students.each do |student|
 
         id = student.id
@@ -28,6 +26,7 @@ module MindleapsAnalytics
 
         point = []
 
+        # Patrick's formula
         performance = 3.31
         performance += 1.72*(10**-2) * nr_of_lessons
         performance += -8.14*(10**-5) * nr_of_lessons**2
@@ -46,12 +45,13 @@ module MindleapsAnalytics
 
         point << nr_of_lessons
         point << performance
-        @seriesA << point
-        # @seriesB << point if student.group_b
+
+        # add this point to the correct (meaning: for this student's Group) data series
         @groups[student.group_id.to_s.to_sym] << point
 
       end
 
+      # now get the groupname for each group, and store groupname and data together in an array
       @series = []
       @groups.each do |key, data|
         group = Group.find(key.to_s.to_i)

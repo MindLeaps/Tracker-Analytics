@@ -32,7 +32,8 @@
                 {
                     name: 'Group <%= entry[:name] %>', // e.g. 'Group A',
                     data: <%= entry[:data] %>  // e.g. [[0,1], [2,2], ...]
-                }, // last ',' doesn't crash highcharts, so we'll leave it
+                }
+                <%=',' unless entry == @series.last %>
                 <% end %>
             ]
         });
