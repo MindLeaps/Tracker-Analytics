@@ -15,22 +15,22 @@
                 type: 'scatter'
             },
             title: {
-                text: 'Performance in time'
+                text: '<%=t :performance_vs_time %>'
             },
             xAxis: {
                 title: {
-                    text: 'Nr. of Lessons'
+                    text: '<%=t :nr_of_lessons %>'
                 }
             },
             yAxis: {
                 title: {
-                    text: 'Performance'
+                    text: '<%=t :performance %>'
                 }
             },
             series: [
                 <% @series.each do |entry| %>
                 {
-                    name: 'Group <%= entry[:name] %>', // e.g. 'Group A',
+                    name: '<%=t(:group) + ' ' + entry[:name] %>', // e.g. 'Group A',
                     data: <%= entry[:data] %>  // e.g. [[0,1], [2,2], ...]
                 }
                 <%=',' unless entry == @series.last %>
