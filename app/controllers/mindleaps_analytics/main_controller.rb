@@ -4,7 +4,17 @@ module MindleapsAnalytics
   class MainController < ApplicationController
     def first
       now = Date.today
+      # Student.group(:group_id)
       students = Student.all
+      @x = Group.all
+
+      # chart series is a hash : {Group Name, Points[[]]}
+      # Points[[]] is a two-dimensional array
+      @groups = {}
+      group_ids = students.group(:group_id).count.keys
+      group_ids.each do |group_id|
+        @groups[group_id.to_s.to_sym] = []
+      end
 
       @seriesA = []
       # @seriesB = []
@@ -12,12 +22,9 @@ module MindleapsAnalytics
       students.each do |student|
 
         id = student.id
-        # nr_of_lessons = Lesson.where(student_id: id).count  // Lesson doesn't have the student, you need to go to Grade
-        # nr_of_grades = Grade.where(student_id: id).distinct.count(:lesson_id)
         nr_of_lessons = Grade.where(student_id: id).distinct.count(:lesson_id)
         dob = student.dob
         age = now.year - dob.year - ((now.month > dob.month || (now.month == dob.month && now.day >= dob.day)) ? 0 : 1)
-        # time = ((Date.today - student.created_at.to_date).to_i)
 
         point = []
 
@@ -41,7 +48,14 @@ module MindleapsAnalytics
         point << performance
         @seriesA << point
         # @seriesB << point if student.group_b
+        @groups[student.group_id.to_s.to_sym] << point
 
+      end
+
+      @series = []
+      @groups.each do |key, data|
+        group = Group.find(key.to_s.to_i)
+        @series << {name: group.group_name, data: data}
       end
 
     end

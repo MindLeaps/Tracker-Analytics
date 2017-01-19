@@ -3,21 +3,6 @@
 </head>
 <h1>Main#first</h1>
 <p>Find me in app/views/mindleaps_analytics/main/first.html.erb</p>
-<!--<table>-->
-<%# @students.each do |student| %>
-<%# id = student.id %>
-<%# dob = student.dob #nr_of_grades = Grade.where(student_id: id).count %>
-<!--<%# age = @now.year - dob.year - ((@now.month > dob.month || (@now.month == dob.month && @now.day >= dob.day)) ? 0 : 1) %>-->
-<!--<%# time = ((Time.now - student.created_at).to_i) / (24 * 60 * 60) %>-->
-<!--&lt;!&ndash;<tr>&ndash;&gt;-->
-<!--&lt;!&ndash;<td><%#= id %></td>&ndash;&gt;-->
-<!--&lt;!&ndash;<td><%#= age %></td>&ndash;&gt;-->
-<!--&lt;!&ndash;<td><%#= time %></td>&ndash;&gt;-->
-<!--&lt;!&ndash;</tr>&ndash;&gt;-->
-
-<%# end %>
-
-<!--</table>-->
 
 <p>
 <div id="chart" style="width:100%; height:400px;"></div>
@@ -42,10 +27,14 @@
                     text: 'Performance'
                 }
             },
-            series: [{
-                name: 'Group A',
-                data: <%= @seriesA %>
-            }]
+            series: [
+                <% @series.each do |entry| %>
+                {
+                    name: 'Group <%= entry[:name] %>', // e.g. 'Group A',
+                    data: <%= entry[:data] %>  // e.g. [[0,1], [2,2], ...]
+                }, // last ',' doesn't crash highcharts, so we'll leave it
+                <% end %>
+            ]
         });
     });
 </script>
