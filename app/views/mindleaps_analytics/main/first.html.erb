@@ -3,7 +3,7 @@
 </head>
 <h1>Main#first</h1>
 <p>Find me in app/views/mindleaps_analytics/main/first.html.erb</p>
-<%= @x_axis4.inspect %>
+<%= @x_axis5.inspect %>
 <p>
 <div id="chart" style="width:100%; height:400px;"></div>
 </p>
@@ -14,6 +14,10 @@
 
 <p>
 <div id="chart4" style="width:100%; height:400px;"></div>
+</p>
+
+<p>
+<div id="chart5" style="width:100%; height:400px;"></div>
 </p>
 
 <script>
@@ -106,6 +110,36 @@
             series: [{
                 name: 'Frequency %',
                 data: <%= @y_axis4 %>
+            }]
+        });
+
+        var Chart5 = Highcharts.chart('chart5', {
+            chart: {
+                type: 'column'
+            },
+            legend: {
+                enabled: false
+            },
+            credits: {
+                enabled: false
+            },
+            title: {
+                text: 'Performance change throughout the program by student'
+            },
+            xAxis: {
+                title: {
+                    text: 'Performance change'
+                },
+                categories: <%= @x_axis5.inspect.html_safe %>
+            },
+            yAxis: {
+                title: {
+                    text: 'Frequency %'
+                }
+            },
+            series: [{
+                name: 'Frequency %',
+                data: <%= @y_axis5 %>
             }]
         });
     });

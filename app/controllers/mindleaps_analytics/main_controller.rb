@@ -11,26 +11,63 @@ module MindleapsAnalytics
       # figure 2: # Assessments per month
       @x_axis2 = []
       @y_axis2 = []
-      countAssessments(@x_axis2, @y_axis2)
+      count_assessments(@x_axis2, @y_axis2)
 
       # figure 4: Histogram of student performance values
-      # count average performance per student per lesson
+      # count average performance per student
       @x_axis4 = []
       @y_axis4 = []
-      countStudentAvgPerformance(@x_axis4,@y_axis4)
+      count_student_avg_performance(@x_axis4, @y_axis4)
+
+      # figure 5: Histogram of student performance change
+      @x_axis5 = []
+      @y_axis5 = []
+      count_student_avg_performance_change(@x_axis5, @y_axis5)
 
     end
 
-    def countStudentAvgPerformance(x_axis, y_axis)
-      marks_raw = Hash.new(0)
+    def count_student_avg_performance_change(x_axis, y_axis)
       students = Student.all
+
+      marks_raw = Hash.new(0)
+      @debug = []
       students.each do |student|
-        gradeDescriptors = Grade.where(student_id: student.id).joins(:grade_descriptor)
-        avg = gradeDescriptors.average(:mark)
-        if avg != nil
-          avg = avg.round
-        else
+        minDate = Grade.where(student_id: student.id).joins(:lesson).minimum(:date)
+        maxDate = Grade.where(student_id: student.id).joins(:lesson).maximum(:date)
+        @debug << [minDate, maxDate]
+        # minGrades = Grade.includes(:lesson).where(grades: {student_id: student.id}, lessons: {date: minDate})
+        # minGrades.count
+        minAverage = Grade.includes(:lesson).where(grades: {student_id: student.id}, lessons: {date: minDate}).joins(:grade_descriptor).average(:mark)
+        maxAverage = Grade.includes(:lesson).where(grades: {student_id: student.id}, lessons: {date: maxDate}).joins(:grade_descriptor).average(:mark)
+
+
+        minAverage = 0 if minAverage.nil?
+        maxAverage = 0 if maxAverage.nil?
+
+        difference = (((maxAverage - minAverage) * 2) + 0.5).floor
+        marks_raw[difference.object_id] += 1
+      end
+
+      marks_sorted = marks_raw.sort
+
+      marks_sorted.each do |key, values|
+        x_axis << (ObjectSpace._id2ref(key)).to_f / 2
+        y_axis << (values * 100) / students.count
+      end
+    end
+
+    def count_student_avg_performance(x_axis, y_axis)
+
+      students = Student.all
+
+      marks_raw = Hash.new(0)
+      students.each do |student|
+        avg = Grade.where(student_id: student.id).joins(:grade_descriptor).average(:mark)
+
+        if avg.nil?
           avg = 0
+        else
+          avg = avg.round
         end
         marks_raw[avg.to_s.to_sym] += 1
       end
@@ -43,7 +80,7 @@ module MindleapsAnalytics
       end
     end
 
-    def countAssessments(x_axis, y_axis)
+    def count_assessments(x_axis, y_axis)
       @dates = Lesson.group(:date).count.keys
       months_raw = {}
       @dates.each do |date|
