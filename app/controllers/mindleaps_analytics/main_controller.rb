@@ -3,6 +3,70 @@ require_dependency "mindleaps_analytics/application_controller"
 module MindleapsAnalytics
   class MainController < ApplicationController
     def first
+
+      # Patrick's formula
+      @series = []
+      regression(@series)
+
+      # figure 2: # Assessments per month
+      @x_axis2 = []
+      @y_axis2 = []
+      countAssessments(@x_axis2, @y_axis2)
+
+      # figure 4: Histogram of student performance values
+      # count average performance per student per lesson
+      @x_axis4 = []
+      @y_axis4 = []
+      countStudentAvgPerformance(@x_axis4,@y_axis4)
+
+    end
+
+    def countStudentAvgPerformance(x_axis, y_axis)
+      marks_raw = Hash.new(0)
+      students = Student.all
+      students.each do |student|
+        gradeDescriptors = Grade.where(student_id: student.id).joins(:grade_descriptor)
+        avg = gradeDescriptors.average(:mark)
+        if avg != nil
+          avg = avg.round
+        else
+          avg = 0
+        end
+        marks_raw[avg.to_s.to_sym] += 1
+      end
+
+      marks_sorted = marks_raw.sort
+
+      marks_sorted.each do |key, values|
+        x_axis << key.to_s
+        y_axis << (values * 100) / students.count
+      end
+    end
+
+    def countAssessments(x_axis, y_axis)
+      @dates = Lesson.group(:date).count.keys
+      months_raw = {}
+      @dates.each do |date|
+        month = date.year.to_s + date.month.to_s
+        months_raw[month.to_sym] = [date.year, date.month]
+      end
+
+      months_sorted = months_raw.sort
+
+      months_sorted.each do |key, values|
+        from = Date.new(values[0], values[1], 1)
+        to = Date.new(values[0], values[1], 1).at_end_of_month
+        lessons = Lesson.where("date >= :date_from AND date <= :date_to", {date_from: from, date_to: to})
+        nr_of_assessments = 0
+        lessons.each do |lesson|
+          nr_of_assessments += Grade.where(lesson_id: lesson.id).distinct.count(:student_id)
+        end
+        x_axis << key.to_s
+        y_axis << nr_of_assessments
+      end
+    end
+
+    def regression(series)
       now = Date.today
       students = Student.all
 
@@ -15,6 +79,7 @@ module MindleapsAnalytics
 
         id = student.id
         # The number of lessons the student has attended
+        # nr_of_lessons = student.grades.distinct.count(:lesson_id)
         nr_of_lessons = Grade.where(student_id: id).distinct.count(:lesson_id)
         dob = student.dob
         age = now.year - dob.year - ((now.month > dob.month || (now.month == dob.month && now.day >= dob.day)) ? 0 : 1)
@@ -49,12 +114,10 @@ module MindleapsAnalytics
       end
 
       # now get the group name for each group, and store group name and data together in an array
-      @series = []
       groups.each do |key, data|
         group = Group.find(key.to_s.to_i)
-        @series << {name: group.group_name, data: data}
+        series << {name: group.group_name, data: data}
       end
-
     end
 
     def second

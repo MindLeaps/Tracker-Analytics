@@ -3,9 +3,17 @@
 </head>
 <h1>Main#first</h1>
 <p>Find me in app/views/mindleaps_analytics/main/first.html.erb</p>
-
+<%= @x_axis4.inspect %>
 <p>
 <div id="chart" style="width:100%; height:400px;"></div>
+</p>
+
+<p>
+<div id="chart2" style="width:100%; height:400px;"></div>
+</p>
+
+<p>
+<div id="chart4" style="width:100%; height:400px;"></div>
 </p>
 
 <script>
@@ -39,6 +47,66 @@
                 <%=',' unless entry == @series.last %>
                 <% end %>
             ]
+        });
+
+        var Chart2 = Highcharts.chart('chart2', {
+            chart: {
+                type: 'column'
+            },
+            legend: {
+                enabled: false
+            },
+            credits: {
+                enabled: false
+            },
+            title: {
+                text: 'Number of evaluations in the MindLeaps program by month'
+            },
+            xAxis: {
+                title: {
+                    text: 'Month'
+                },
+                categories: <%= @x_axis2.inspect.html_safe %>
+            },
+            yAxis: {
+                title: {
+                    text: 'Nr. of Assessments'
+                }
+            },
+            series: [{
+                name: 'Nr. of Assessments',
+                data: <%= @y_axis2 %>
+            }]
+        });
+
+        var Chart4 = Highcharts.chart('chart4', {
+            chart: {
+                type: 'column'
+            },
+            legend: {
+                enabled: false
+            },
+            credits: {
+                enabled: false
+            },
+            title: {
+                text: 'Histogram of student performance values'
+            },
+            xAxis: {
+                title: {
+                    text: 'Performance'
+                },
+                categories: <%= @x_axis4.inspect.html_safe %>
+            },
+            yAxis: {
+                title: {
+                    text: 'Frequency %'
+                }
+            },
+            series: [{
+                name: 'Frequency %',
+                data: <%= @y_axis4 %>
+            }]
         });
     });
 </script>
