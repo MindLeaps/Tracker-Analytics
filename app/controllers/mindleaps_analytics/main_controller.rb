@@ -29,11 +29,67 @@ module MindleapsAnalytics
 
       # figure 8: Average performance per group by days in program
       @series8 = []
-      avg_performance_per_student_by_days_in_program(@series8)
+      avg_performance_per_group_by_days_in_program(@series8)
+
+      @series9 = []
+      avg_performance_per_student_by_days_in_program(@series9)
 
     end
 
     def avg_performance_per_student_by_days_in_program(series)
+
+      # The top query
+      lessons = Lesson.all
+
+      performance_hash = {}
+      performance_hash[:above] = []
+      performance_hash[:below] = []
+
+      lessons.each do |lesson|
+        # Find the students who attended this lesson
+        students = Student.includes(:grades).where(grades: {lesson_id: lesson.id})
+
+        students.each do |student|
+          avg = Grade.where(lesson_id: lesson.id, student_id: student.id).joins(:grade_descriptor).average(:mark)
+          # The number of lessons where this student participated in
+          nr_of_lessons = Lesson.includes(:grades).where("date < :date_to", {date_to: lesson.date}, grade: {student_id: student.id}).count
+
+          dob = student.dob
+          now = lesson.date
+          age = now.year - dob.year - ((now.month > dob.month || (now.month == dob.month && now.day >= dob.day)) ? 0 : 1)
+
+          # Non-linear multivariate regression formula
+          performance = 3.31
+          performance += 1.72*(10**-2) * nr_of_lessons
+          performance += -8.14*(10**-5) * nr_of_lessons**2
+          performance += 1.63*(10**-7) * nr_of_lessons**3
+          performance += -1.12*(10**-10) * nr_of_lessons**4
+          performance += 0.039 * age
+
+          point = []
+          point << nr_of_lessons
+          point << avg.to_f
+
+          if (avg >= performance)
+            performance_hash[:above] << point
+          else
+            performance_hash[:below] << point
+          end
+        end
+
+      end
+
+      performance_hash.each do |group, array|
+        if (group == :above)
+          series << {name: "Above regression", data: array}
+        else
+          series << {name: "Below regression", data: array}
+        end
+      end
+
+    end
+
+    def avg_performance_per_group_by_days_in_program(series)
 
       # The top query
       lessons = Lesson.all
@@ -45,7 +101,7 @@ module MindleapsAnalytics
       lessons.each do |lesson|
         # Count the number of previous lessons for this group
         nr_of_lessons = Lesson.where("group_id = :group_id AND date < :date_to",
-                                   {group_id: lesson.group_id, date_to: lesson.date}).distinct.count(:id)
+                                     {group_id: lesson.group_id, date_to: lesson.date}).distinct.count(:id)
         # Determine the average group performance for this lesson
         avg = Grade.includes(:lesson).where(lessons: {id: lesson.id}).joins(:grade_descriptor).average(:mark)
 
