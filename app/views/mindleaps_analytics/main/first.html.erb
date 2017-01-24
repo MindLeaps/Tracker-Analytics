@@ -175,12 +175,15 @@
             credits: {
                 enabled: false
             },
+            tooltip: {
+                valueDecimals: 2
+            },
             title: {
                 text: '<%= t(:title_chart_8)%>'
             },
             xAxis: {
                 title: {
-                    text: '<%= t(:days_in_program) %>'
+                    text: '<%= t(:nr_of_lessons) %>'
                 }
             },
             yAxis: {
@@ -202,12 +205,13 @@
                 enabled: false
             },
             tooltip: {
+                valueDecimals: 2,
                 formatter: function () {
 
                     return "<span style='color:" + this.color + ";'>\u25CF</span><span style='font-size: smaller'> " + this.series.name + "</span><br/>"
                         + this.point.name + "<br/>"
                         + "x: <b>" + this.x + "</b><br/>"
-                        + "y: <b>" + this.y + "</b>";
+                        + "y: <b>" + Highcharts.numberFormat(this.y, 2) + "</b>";
                 },
                 useHTML: true
             },
@@ -216,7 +220,7 @@
             },
             xAxis: {
                 title: {
-                    text: '<%= t(:days_in_program) %>'
+                    text: '<%= t(:nr_of_lessons) %>'
                 }
             },
             yAxis: {

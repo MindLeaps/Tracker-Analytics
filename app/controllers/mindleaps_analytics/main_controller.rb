@@ -12,31 +12,31 @@ module MindleapsAnalytics
       # This chart has a categorical x-axis: the months
       @x_axis2 = []
       @y_axis2 = []
-      count_assessments(@x_axis2, @y_axis2)
+      get_series_chart2(@x_axis2, @y_axis2)
 
       # figure 4: Histogram of student performance values
       # count average performance per student
       @series4 = []
-      count_student_avg_performance(@series4)
+      get_series_chart4(@series4)
 
       # figure 5: Histogram of student performance change
       @series5 = []
-      count_student_avg_performance_change(@series5)
+      get_series_chart5(@series5)
 
       # figure 6: Histogram of student performance change by boys and girls
       @series6 = []
-      count_student_avg_performance_change_by_gender(@series6)
+      get_series_chart6(@series6)
 
       # figure 8: Average performance per group by days in program
       @series8 = []
-      avg_performance_per_group_by_days_in_program(@series8)
+      get_series_chart8(@series8)
 
       @series9 = []
-      avg_performance_per_student_by_days_in_program(@series9)
+      get_series_chart9(@series9)
 
     end
 
-    def avg_performance_per_student_by_days_in_program(series)
+    def get_series_chart9(series)
 
       # The top query
       lessons = Lesson.all
@@ -90,7 +90,7 @@ module MindleapsAnalytics
 
     end
 
-    def avg_performance_per_group_by_days_in_program(series)
+    def get_series_chart8(series)
 
       # The top query
       lessons = Lesson.all
@@ -104,7 +104,8 @@ module MindleapsAnalytics
         nr_of_lessons = Lesson.where("group_id = :group_id AND date < :date_to",
                                      {group_id: lesson.group_id, date_to: lesson.date}).distinct.count(:id)
         # Determine the average group performance for this lesson
-        avg = Grade.includes(:lesson).where(lessons: {id: lesson.id}).joins(:grade_descriptor).average(:mark)
+        # avg = Grade.includes(:lesson).where(lessons: {id: lesson.id}).joins(:grade_descriptor).average(:mark)
+        avg = Grade.where(lesson_id: lesson.id).joins(:grade_descriptor).average(:mark)
 
         point = []
         point << nr_of_lessons
@@ -124,7 +125,7 @@ module MindleapsAnalytics
 
     end
 
-    def count_student_avg_performance_change_by_gender(series)
+    def get_series_chart6(series)
 
       # The top query
       students = Student.all
@@ -174,7 +175,7 @@ module MindleapsAnalytics
 
     end
 
-    def count_student_avg_performance_change(series)
+    def get_series_chart5(series)
 
       # The top query
       students = Student.all
@@ -211,7 +212,7 @@ module MindleapsAnalytics
 
     end
 
-    def count_student_avg_performance(series)
+    def get_series_chart4(series)
 
       # The top query
       students = Student.all
@@ -242,7 +243,7 @@ module MindleapsAnalytics
 
     end
 
-    def count_assessments(x_axis, y_axis)
+    def get_series_chart2(x_axis, y_axis)
       @dates = Lesson.group(:date).count.keys
 
       months_raw = {}
