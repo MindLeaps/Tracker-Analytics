@@ -24,19 +24,70 @@ module MindleapsAnalytics
       @y_axis5 = []
       count_student_avg_performance_change(@x_axis5, @y_axis5)
 
+      # figure 5: Histogram of student performance change by boys and girls
+      @x_axis6 = []
+      @series6 = []
+      count_student_avg_performance_change_by_gender(@x_axis6, @series6)
+
+    end
+
+    def count_student_avg_performance_change_by_gender(x_axis, series)
+
+      # The top query
+      students = Student.all
+
+      # Hash to contain the genders series, so one entry per gender
+      seriesDoubleHash = Hash.new
+      # Hash to contain the total number of entries per gender
+      seriesTotalsHash = Hash.new(0)
+
+      # Calculate the performance difference per student
+      students.each do |student|
+        minDate = Grade.where(student_id: student.id).joins(:lesson).minimum(:date)
+        maxDate = Grade.where(student_id: student.id).joins(:lesson).maximum(:date)
+        minAverage = Grade.includes(:lesson).where(grades: {student_id: student.id}, lessons: {date: minDate}).joins(:grade_descriptor).average(:mark)
+        maxAverage = Grade.includes(:lesson).where(grades: {student_id: student.id}, lessons: {date: maxDate}).joins(:grade_descriptor).average(:mark)
+
+
+        minAverage = 0 if minAverage.nil?
+        maxAverage = 0 if maxAverage.nil?
+
+        # Bin the x-axis on 0.5's
+        difference = (((maxAverage - minAverage) * 2) + 0.5).floor
+
+        # add this point to the correct (meaning: for this student's Gender) data series
+        # so we're creating a new hash per gender, and add that to the seriesDoubleHash
+        # all in all the data structure looks like this: seriesDoubleHash[:Gender] => Hash[:x-axis bin] => Count
+        if seriesDoubleHash[student.gender] == nil
+          seriesDoubleHash[student.gender] = Hash.new(0)
+        end
+        seriesDoubleHash[student.gender][difference.object_id] += 1
+        # Calculate the totals so we can calculate the distribution per series
+        seriesTotalsHash[student.gender] += 1
+      end
+
+      # Calculation is done, now convert the seriesDoubleHash to something HighCharts understands
+      # Loop over the Genders: max 2
+      seriesDoubleHash.each do |key, hash|
+        data = []
+        # Loop over the Difference bins: Expected 10 - 20 entries
+        # We convert the hash to an array, map the hash keys back to x-axis bins and
+        # transform the count to a frequency%
+        hash.each do |difference, count|
+          data << [(ObjectSpace._id2ref(difference)).to_f / 2, (count * 100) / seriesTotalsHash[key]]
+        end
+        series << {name: key, data: data}
+      end
+
     end
 
     def count_student_avg_performance_change(x_axis, y_axis)
       students = Student.all
 
       marks_raw = Hash.new(0)
-      @debug = []
       students.each do |student|
         minDate = Grade.where(student_id: student.id).joins(:lesson).minimum(:date)
         maxDate = Grade.where(student_id: student.id).joins(:lesson).maximum(:date)
-        @debug << [minDate, maxDate]
-        # minGrades = Grade.includes(:lesson).where(grades: {student_id: student.id}, lessons: {date: minDate})
-        # minGrades.count
         minAverage = Grade.includes(:lesson).where(grades: {student_id: student.id}, lessons: {date: minDate}).joins(:grade_descriptor).average(:mark)
         maxAverage = Grade.includes(:lesson).where(grades: {student_id: student.id}, lessons: {date: maxDate}).joins(:grade_descriptor).average(:mark)
 
