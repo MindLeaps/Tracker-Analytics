@@ -66,9 +66,10 @@ module MindleapsAnalytics
           performance += -1.12*(10**-10) * nr_of_lessons**4
           performance += 0.039 * age
 
-          point = []
-          point << nr_of_lessons
-          point << avg.to_f
+          point = {}
+          point[:name] = student.last_name + ", " + student.first_name
+          point[:x] = nr_of_lessons
+          point[:y] = avg.to_f
 
           if (avg >= performance)
             performance_hash[:above] << point
@@ -81,9 +82,9 @@ module MindleapsAnalytics
 
       performance_hash.each do |group, array|
         if (group == :above)
-          series << {name: "Above regression", data: array}
+          series << {name: t(:above_regression), data: array}
         else
-          series << {name: "Below regression", data: array}
+          series << {name: t(:below_regression), data: array}
         end
       end
 
@@ -140,7 +141,6 @@ module MindleapsAnalytics
         min_avg = Grade.includes(:lesson).where(grades: {student_id: student.id}, lessons: {date: min_date}).joins(:grade_descriptor).average(:mark)
         max_avg = Grade.includes(:lesson).where(grades: {student_id: student.id}, lessons: {date: max_date}).joins(:grade_descriptor).average(:mark)
 
-
         min_avg = 0 if min_avg.nil?
         max_avg = 0 if max_avg.nil?
 
@@ -169,7 +169,7 @@ module MindleapsAnalytics
         hash.each do |difference, count|
           data << [ObjectSpace._id2ref(difference), (count * 100) / series_totals_hash[key]]
         end
-        series << {name: key, data: data}
+        series << {name: t(:gender) + ' ' + key, data: data}
       end
 
     end
@@ -207,7 +207,7 @@ module MindleapsAnalytics
       series_hash.each do |difference, count|
         data << [ObjectSpace._id2ref(difference), (count * 100) / students.count]
       end
-      series << {name: 'Frequency %', data: data}
+      series << {name: t(:frequency_perc), data: data}
 
     end
 
@@ -238,7 +238,7 @@ module MindleapsAnalytics
       series_hash.each do |difference, count|
         data << [ObjectSpace._id2ref(difference), (count * 100) / students.count]
       end
-      series << {name: 'Frequency %', data: data}
+      series << {name: t(:frequency_perc), data: data}
 
     end
 

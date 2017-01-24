@@ -1,5 +1,20 @@
 en:
-  performance: Performance
-  nr_of_lessons: Nr. of Lessons
-  performance_vs_time: Performance vs. Time
   group: Group
+  gender: Gender
+  month: Month
+  performance: Performance
+  performance_change: Performance change
+  nr_of_lessons: Nr. of Lessons
+  nr_of_assessments: Nr. of Assessments
+  days_in_program: Days in program
+  frequency_perc: Frequency %
+  above_regression: Above regression
+  below_regression: Below regression
+
+  performance_vs_time: Performance vs. Time
+  title_chart_2: Number of evaluations in the MindLeaps program by month
+  title_chart_4: Histogram of student performance values
+  title_chart_5: Performance change throughout the program by student
+  title_chart_6: Performance change throughout the program separated by boys and girls
+  title_chart_8: Average performance per group by days in program
+  title_chart_9: Performance data for each student versus time in program

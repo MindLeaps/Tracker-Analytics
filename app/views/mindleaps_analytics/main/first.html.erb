@@ -68,21 +68,21 @@
                 enabled: false
             },
             title: {
-                text: 'Number of evaluations in the MindLeaps program by month'
+                text: '<%= t(:title_chart_2)%>'
             },
             xAxis: {
                 title: {
-                    text: 'Month'
+                    text: '<%= t(:month) %>'
                 },
                 categories: <%= @x_axis2.inspect.html_safe %>
             },
             yAxis: {
                 title: {
-                    text: 'Nr. of Assessments'
+                    text: '<%= t(:nr_of_assessments) %>'
                 }
             },
             series: [{
-                name: 'Nr. of Assessments',
+                name: '<%= t(:nr_of_assessments) %>',
                 data: <%= @y_axis2 %>
             }]
         });
@@ -98,16 +98,16 @@
                 enabled: false
             },
             title: {
-                text: 'Histogram of student performance values'
+                text: '<%= t(:title_chart_4)%>'
             },
             xAxis: {
                 title: {
-                    text: 'Performance'
+                    text: '<%= t(:performance) %>'
                 }
             },
             yAxis: {
                 title: {
-                    text: 'Frequency %'
+                    text: '<%= t(:frequency_perc) %>'
                 }
             },
             series: <%= renderSeries(@series4) %>
@@ -124,16 +124,16 @@
                 enabled: false
             },
             title: {
-                text: 'Performance change throughout the program by student'
+                text: '<%= t(:title_chart_5)%>'
             },
             xAxis: {
                 title: {
-                    text: 'Performance change'
+                    text: '<%= t(:performance_change) %>'
                 }
             },
             yAxis: {
                 title: {
-                    text: 'Frequency %'
+                    text: '<%= t(:frequency_perc) %>'
                 }
             },
             series: <%= renderSeries(@series5) %>
@@ -150,16 +150,16 @@
                 enabled: false
             },
             title: {
-                text: 'Performance change throughout the program separated by boys and girls'
+                text: '<%= t(:title_chart_6)%>'
             },
             xAxis: {
                 title: {
-                    text: 'Performance change'
+                    text: '<%= t(:performance_change) %>'
                 }
             },
             yAxis: {
                 title: {
-                    text: 'Frequency %'
+                    text: '<%= t(:frequency_perc) %>'
                 }
             },
             series: <%= renderSeries(@series6) %>
@@ -176,16 +176,16 @@
                 enabled: false
             },
             title: {
-                text: 'Average performance per group by days in program'
+                text: '<%= t(:title_chart_8)%>'
             },
             xAxis: {
                 title: {
-                    text: 'Days'
+                    text: '<%= t(:days_in_program) %>'
                 }
             },
             yAxis: {
                 title: {
-                    text: 'Performance'
+                    text: '<%= t(:performance)%>'
                 }
             },
             series: <%= renderSeries(@series8) %>
@@ -201,17 +201,27 @@
             credits: {
                 enabled: false
             },
+            tooltip: {
+                formatter: function () {
+
+                    return "<span style='color:" + this.color + ";'>\u25CF</span><span style='font-size: smaller'> " + this.series.name + "</span><br/>"
+                        + this.point.name + "<br/>"
+                        + "x: <b>" + this.x + "</b><br/>"
+                        + "y: <b>" + this.y + "</b>";
+                },
+                useHTML: true
+            },
             title: {
-                text: 'Performance data for each student versus time in program'
+                text: '<%= t(:title_chart_9)%>'
             },
             xAxis: {
                 title: {
-                    text: 'Days'
+                    text: '<%= t(:days_in_program) %>'
                 }
             },
             yAxis: {
                 title: {
-                    text: 'Performance'
+                    text: '<%= t(:performance) %>'
                 }
             },
             series: <%= renderSeries(@series9) %>
