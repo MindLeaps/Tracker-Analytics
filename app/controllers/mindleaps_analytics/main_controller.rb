@@ -5,8 +5,8 @@ module MindleapsAnalytics
     def first
 
       # Patrick's formula
-      @series = []
-      regression(@series)
+      # @series = []
+      # regression(@series)
 
       # figure 2: # Assessments per month
       # This chart has a categorical x-axis: the months
@@ -31,6 +31,8 @@ module MindleapsAnalytics
       @series8 = []
       get_series_chart8(@series8)
 
+      # Figure 9: Performance data for each student versus time in program
+      # Different series for above/below regression formula (Patrick's formula)
       @series9 = []
       get_series_chart9(@series9)
 
