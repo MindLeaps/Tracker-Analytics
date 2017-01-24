@@ -36,10 +36,33 @@ module MindleapsAnalytics
     def avg_performance_per_student_by_days_in_program(series)
 
       # The top query
-      students = Student.all
+      lessons = Lesson.all
 
-      students.each do |student|
+      # Hash to contain the groups series, so one entry per group
+      series_hash = Hash.new
 
+      # Calculate the average performance for this lesson and group
+      lessons.each do |lesson|
+        # Count the number of previous lessons for this group
+        nr_of_lessons = Lesson.where("group_id = :group_id AND date < :date_to",
+                                   {group_id: lesson.group_id, date_to: lesson.date}).distinct.count(:id)
+        # Determine the average group performance for this lesson
+        avg = Grade.includes(:lesson).where(lessons: {id: lesson.id}).joins(:grade_descriptor).average(:mark)
+
+        point = []
+        point << nr_of_lessons
+        point << avg.to_f
+
+        # add this point to the correct (meaning: this Group's) data series
+        if series_hash[lesson.group.group_name] == nil
+          series_hash[lesson.group.group_name] = []
+        end
+        series_hash[lesson.group.group_name] << point
+      end
+
+      # Calculation is done, now convert the series_hash to something HighCharts understands
+      series_hash.each do |group, array|
+        series << {name: t(:group) + ' ' + group, data: array}
       end
 
     end
@@ -50,45 +73,45 @@ module MindleapsAnalytics
       students = Student.all
 
       # Hash to contain the genders series, so one entry per gender
-      seriesDoubleHash = Hash.new
+      series_double_hash = Hash.new
       # Hash to contain the total number of entries per gender
-      seriesTotalsHash = Hash.new(0)
+      series_totals_hash = Hash.new(0)
 
       # Calculate the performance difference per student
       students.each do |student|
-        minDate = Grade.where(student_id: student.id).joins(:lesson).minimum(:date)
-        maxDate = Grade.where(student_id: student.id).joins(:lesson).maximum(:date)
-        minAverage = Grade.includes(:lesson).where(grades: {student_id: student.id}, lessons: {date: minDate}).joins(:grade_descriptor).average(:mark)
-        maxAverage = Grade.includes(:lesson).where(grades: {student_id: student.id}, lessons: {date: maxDate}).joins(:grade_descriptor).average(:mark)
+        min_date = Grade.where(student_id: student.id).joins(:lesson).minimum(:date)
+        max_date = Grade.where(student_id: student.id).joins(:lesson).maximum(:date)
+        min_avg = Grade.includes(:lesson).where(grades: {student_id: student.id}, lessons: {date: min_date}).joins(:grade_descriptor).average(:mark)
+        max_avg = Grade.includes(:lesson).where(grades: {student_id: student.id}, lessons: {date: max_date}).joins(:grade_descriptor).average(:mark)
 
 
-        minAverage = 0 if minAverage.nil?
-        maxAverage = 0 if maxAverage.nil?
+        min_avg = 0 if min_avg.nil?
+        max_avg = 0 if max_avg.nil?
 
         # Bin the x-axis on 0.5's
-        difference = (((maxAverage - minAverage) * 2) + 0.5).floor.to_f / 2
+        difference = (((max_avg - min_avg) * 2) + 0.5).floor.to_f / 2
 
         # add this point to the correct (meaning: for this student's Gender) data series
         # so we're creating a new hash per gender, and add that to the seriesDoubleHash
         # all in all the data structure looks like this: seriesDoubleHash[:Gender] => Hash[:x-axis bin] => Count
-        if seriesDoubleHash[student.gender] == nil
-          seriesDoubleHash[student.gender] = Hash.new(0)
+        if series_double_hash[student.gender] == nil
+          series_double_hash[student.gender] = Hash.new(0)
         end
-        seriesDoubleHash[student.gender][difference.object_id] += 1
+        series_double_hash[student.gender][difference.object_id] += 1
         # Calculate the totals so we can calculate the distribution per series
-        seriesTotalsHash[student.gender] += 1
+        series_totals_hash[student.gender] += 1
       end
 
       # Calculation is done, now convert the seriesDoubleHash to something HighCharts understands
       # Loop over the Genders: max 2
-      seriesDoubleHash.each do |key, hash|
+      series_double_hash.each do |key, hash|
         # Array to contain the x and y values
         # x-axis = difference bin, y value = frequency
         data = []
         # Loop over the Difference bins: Expected 10 - 20 entries
         # Map the hash keys back to x-axis bins and transform the y-axis counts to frequencies
         hash.each do |difference, count|
-          data << [ObjectSpace._id2ref(difference), (count * 100) / seriesTotalsHash[key]]
+          data << [ObjectSpace._id2ref(difference), (count * 100) / series_totals_hash[key]]
         end
         series << {name: key, data: data}
       end
@@ -101,22 +124,22 @@ module MindleapsAnalytics
       students = Student.all
 
       # Hash to contain the difference bins with their counts
-      seriesHash = Hash.new(0)
+      series_hash = Hash.new(0)
 
       # Calculate the performance difference per student
       students.each do |student|
-        minDate = Grade.where(student_id: student.id).joins(:lesson).minimum(:date)
-        maxDate = Grade.where(student_id: student.id).joins(:lesson).maximum(:date)
-        minAverage = Grade.includes(:lesson).where(grades: {student_id: student.id}, lessons: {date: minDate}).joins(:grade_descriptor).average(:mark)
-        maxAverage = Grade.includes(:lesson).where(grades: {student_id: student.id}, lessons: {date: maxDate}).joins(:grade_descriptor).average(:mark)
+        min_date = Grade.where(student_id: student.id).joins(:lesson).minimum(:date)
+        max_date = Grade.where(student_id: student.id).joins(:lesson).maximum(:date)
+        min_avg = Grade.includes(:lesson).where(grades: {student_id: student.id}, lessons: {date: min_date}).joins(:grade_descriptor).average(:mark)
+        max_avg = Grade.includes(:lesson).where(grades: {student_id: student.id}, lessons: {date: max_date}).joins(:grade_descriptor).average(:mark)
 
 
-        minAverage = 0 if minAverage.nil?
-        maxAverage = 0 if maxAverage.nil?
+        min_avg = 0 if min_avg.nil?
+        max_avg = 0 if max_avg.nil?
 
         # Bin the x-axis on 0.5's
-        difference = (((maxAverage - minAverage) * 2) + 0.5).floor.to_f / 2
-        seriesHash[difference.object_id] += 1
+        difference = (((max_avg - min_avg) * 2) + 0.5).floor.to_f / 2
+        series_hash[difference.object_id] += 1
       end
 
       # Array to contain the x and y values
@@ -125,7 +148,7 @@ module MindleapsAnalytics
 
       # Loop over the Difference bins: Expected 10 - 20 entries
       # Map the hash keys back to x-axis bins and transform the y-axis counts to frequencies
-      seriesHash.each do |difference, count|
+      series_hash.each do |difference, count|
         data << [ObjectSpace._id2ref(difference), (count * 100) / students.count]
       end
       series << {name: 'Frequency %', data: data}
@@ -138,7 +161,7 @@ module MindleapsAnalytics
       students = Student.all
 
       # Hash to contain the average performance bins with their counts
-      seriesHash = Hash.new(0)
+      series_hash = Hash.new(0)
       students.each do |student|
         avg = Grade.where(student_id: student.id).joins(:grade_descriptor).average(:mark)
 
@@ -147,7 +170,7 @@ module MindleapsAnalytics
         else
           avg = avg.round
         end
-        seriesHash[avg.object_id] += 1
+        series_hash[avg.object_id] += 1
       end
 
       # Array to contain the x and y values
@@ -156,7 +179,7 @@ module MindleapsAnalytics
 
       # Loop over the average performance bins
       # Map the hash keys back to x-axis bins and transform the y-axis counts to frequencies
-      seriesHash.each do |difference, count|
+      series_hash.each do |difference, count|
         data << [ObjectSpace._id2ref(difference), (count * 100) / students.count]
       end
       series << {name: 'Frequency %', data: data}

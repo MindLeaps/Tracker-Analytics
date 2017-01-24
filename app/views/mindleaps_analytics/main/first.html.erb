@@ -3,7 +3,7 @@
 </head>
 <h1>Main#first</h1>
 <p>Find me in app/views/mindleaps_analytics/main/first.html.erb</p>
-<%= @series6.inspect %>
+<%#= @series8.inspect %>
 <p>
 <div id="chart" style="width:100%; height:400px;"></div>
 </p>
@@ -22,6 +22,10 @@
 
 <p>
 <div id="chart6" style="width:100%; height:400px;"></div>
+</p>
+
+<p>
+<div id="chart8" style="width:100%; height:400px;"></div>
 </p>
 
 <script>
@@ -155,6 +159,32 @@
                 }
             },
             series: <%= renderSeries(@series6) %>
+        });
+
+        var Chart8 = Highcharts.chart('chart8', {
+            chart: {
+                type: 'scatter'
+            },
+            legend: {
+                enabled: true
+            },
+            credits: {
+                enabled: false
+            },
+            title: {
+                text: 'Average performance per group by days in program'
+            },
+            xAxis: {
+                title: {
+                    text: 'Days'
+                }
+            },
+            yAxis: {
+                title: {
+                    text: 'Performance'
+                }
+            },
+            series: <%= renderSeries(@series8) %>
         });
     });
 </script>
