@@ -46,15 +46,7 @@
                     text: '<%=t :performance %>'
                 }
             },
-            series: [
-                <% @series.each do |entry| %>
-                {
-                    name: '<%=t(:group) + ' ' + entry[:name] %>', // e.g. 'Group A',
-                    data: <%= entry[:data] %>  // e.g. [[0,1], [2,2], ...]
-                }
-                <%=',' unless entry == @series.last %>
-                <% end %>
-            ]
+            series: <%= renderSeries(@series) %>
         });
 
         var Chart2 = Highcharts.chart('chart2', {
@@ -103,18 +95,14 @@
             xAxis: {
                 title: {
                     text: 'Performance'
-                },
-                categories: <%= @x_axis4.inspect.html_safe %>
+                }
             },
             yAxis: {
                 title: {
                     text: 'Frequency %'
                 }
             },
-            series: [{
-                name: 'Frequency %',
-                data: <%= @y_axis4 %>
-            }]
+            series: <%= renderSeries(@series4) %>
         });
 
         var Chart5 = Highcharts.chart('chart5', {
@@ -133,18 +121,14 @@
             xAxis: {
                 title: {
                     text: 'Performance change'
-                },
-                categories: <%= @x_axis5.inspect.html_safe %>
+                }
             },
             yAxis: {
                 title: {
                     text: 'Frequency %'
                 }
             },
-            series: [{
-                name: 'Frequency %',
-                data: <%= @y_axis5 %>
-            }]
+            series: <%= renderSeries(@series5) %>
         });
 
         var Chart6 = Highcharts.chart('chart6', {
@@ -170,15 +154,7 @@
                     text: 'Frequency %'
                 }
             },
-            series: [
-                <% @series6.each do |entry| %>
-                {
-                    name: '<%= entry[:name] %>',
-                    data: <%= entry[:data] %>
-                }
-                <%=',' unless entry == @series6.last %>
-                <% end %>
-            ]
+            series: <%= renderSeries(@series6) %>
         });
     });
 </script>
