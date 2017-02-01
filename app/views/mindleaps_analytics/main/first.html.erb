@@ -3,7 +3,25 @@
 </head>
 <h1>Main#first</h1>
 <p>Find me in app/views/mindleaps_analytics/main/first.html.erb</p>
-<%#= @series9.inspect %>
+<%#= @series4 %>
+
+
+<table>
+  <tr>
+    <td>
+      <%= label_tag :chapter_select, "Chapter" %>
+      <%= select_tag :chapter_select, options_from_collection_for_select(Chapter.all, :id, :chapter_name, @selected_chapter) %>
+    </td>
+    <td>
+      <%= label_tag :group_select, "Group" %>
+      <%= select_tag :group_select, options_from_collection_for_select(Group.all, :id, :group_name, @selected_group) %>
+    </td>
+    <td>
+      <%= label_tag :student_select, "Student" %>
+      <%= select_tag :student_select, options_from_collection_for_select(Student.all, :id, :first_name, @selected_student) %>
+    </td>
+  </tr>
+</table>
 
 <p>
 <div id="chart2" style="width:100%; height:400px;"></div>
@@ -30,6 +48,39 @@
 </p>
 
 <script>
+    $('#group_select').change(function () {
+
+        var selectedGroup = $('#group_select :selected').val();
+//        console.log(selectedGroup)
+
+        $.ajax({
+            url: '<%=find_update_students_path%>',
+            type: 'GET',
+            dataType: 'json',
+            data: {
+                group_id: selectedGroup
+            },
+            success: function (data) {
+                var students = data.students;
+                debugger;
+
+                $('#student_select').empty();
+                for (i = 0; i < students.length; i++) {
+                    var student = students[i];
+
+                    var opt = document.createElement('option');
+                    opt.text = student.last_name + ', ' + student.first_name;
+                    opt.value = student.id;
+
+                    $('#student_select').append(opt, null);
+                }
+            },
+            error: function (data) {
+                debugger;
+            }
+        });
+    });
+
     $(function () {
 
         var Chart2 = Highcharts.chart('chart2', {
@@ -85,7 +136,7 @@
                     text: '<%= t(:frequency_perc) %>'
                 }
             },
-            series: <%= renderSeries(@series4) %>
+            series: <%= @series4.html_safe %>
         });
 
         var Chart5 = Highcharts.chart('chart5', {
@@ -111,7 +162,7 @@
                     text: '<%= t(:frequency_perc) %>'
                 }
             },
-            series: <%= renderSeries(@series5) %>
+            series: <%= @series5.html_safe %>
         });
 
         var Chart6 = Highcharts.chart('chart6', {
@@ -137,7 +188,7 @@
                     text: '<%= t(:frequency_perc) %>'
                 }
             },
-            series: <%= renderSeries(@series6) %>
+            series: <%= @series6.html_safe %>
         });
 
         var Chart8 = Highcharts.chart('chart8', {
@@ -166,7 +217,7 @@
                     text: '<%= t(:performance)%>'
                 }
             },
-            series: <%= renderSeries(@series8) %>
+            series: <%= @series8.html_safe %>
         });
 
         var Chart9 = Highcharts.chart('chart9', {
@@ -203,7 +254,7 @@
                     text: '<%= t(:performance) %>'
                 }
             },
-            series: <%= renderSeries(@series9) %>
+            series: <%= @series9.html_safe %>
         });
     });
 </script>

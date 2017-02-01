@@ -1,5 +1,4 @@
 module MindleapsAnalytics
-  module ApplicationHelper
-
+  module FindHelper
   end
 end

@@ -2,7 +2,13 @@ require_dependency "mindleaps_analytics/application_controller"
 
 module MindleapsAnalytics
   class MainController < ApplicationController
+    respond_to :html, :js
+
     def first
+
+      # @chapters = Chapter.all
+      # @groups = Group.all
+      # @students = Student.all
 
       # Patrick's formula
       # @series = []
@@ -16,25 +22,30 @@ module MindleapsAnalytics
 
       # figure 4: Histogram of student performance values
       # count average performance per student
-      @series4 = []
-      get_series_chart4(@series4)
+      series4 = []
+      get_series_chart4(series4)
+      @series4 = series4.to_json
 
       # figure 5: Histogram of student performance change
-      @series5 = []
-      get_series_chart5(@series5)
+      series5 = []
+      get_series_chart5(series5)
+      @series5 = series5.to_json
 
       # figure 6: Histogram of student performance change by boys and girls
-      @series6 = []
-      get_series_chart6(@series6)
+      series6 = []
+      get_series_chart6(series6)
+      @series6 = series6.to_json
 
       # figure 8: Average performance per group by days in program
-      @series8 = []
-      get_series_chart8(@series8)
+      series8 = []
+      get_series_chart8(series8)
+      @series8 = series8.to_json
 
       # Figure 9: Performance data for each student versus time in program
       # Different series for above/below regression formula (Patrick's formula)
-      @series9 = []
-      get_series_chart9(@series9)
+      series9 = []
+      get_series_chart9(series9)
+      @series9 = series9.to_json
 
     end
 
@@ -324,6 +335,7 @@ module MindleapsAnalytics
         group = Group.find(ObjectSpace._id2ref(key))
         series << {name: t(:group) + ' ' + group.group_name, data: data}
       end
+
     end
 
     def second
@@ -331,5 +343,6 @@ module MindleapsAnalytics
 
     def third
     end
+
   end
 end
