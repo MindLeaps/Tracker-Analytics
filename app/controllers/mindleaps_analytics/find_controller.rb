@@ -27,16 +27,27 @@ module MindleapsAnalytics
       end
     end
 
-      # def update_students
-      #   if params[:group_id] and not params[:group_id] = ''
-      #     students = Student.where("group_id = ?", params[:group_id])
-      #   else
-      #     students = Student.all
-      #   end
-      #   respond_to do |format|
-      #     format.json { render :json => students }
-      #   end
-      # end
+    # def update_students
+    #   if params[:group_id] and not params[:group_id] = ''
+    #     students = Student.where("group_id = ?", params[:group_id])
+    #   else
+    #     students = Student.all
+    #   end
+    #   respond_to do |format|
+    #     format.json { render :json => students }
+    #   end
+    # end
+
+    def update_subjects
+      if params[:organization_id] and not params[:organization_id] = ''
+        subjects = Subject.where(organization_id: params[:organization_id])
+      else
+        subjects = Subject.all
+      end
+      respond_to do |format|
+        format.json { render :json => subjects }
+      end
+    end
 
   end
 end

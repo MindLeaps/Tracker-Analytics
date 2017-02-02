@@ -7,7 +7,7 @@
 <!--<br/>-->
 <%#= @series3 %>
 <!--<br/>-->
-<%#= @series3.length %>
+<%#= @count %>
 
 <%= form_tag do %>
     <table>
@@ -40,22 +40,13 @@
 <% end %>
 
 <table id="trellis" style="width: 100%; table-layout: fixed;">
-  <tr>
-    <td></td>
-    <td></td>
-  </tr>
-  <tr>
-    <td></td>
-    <td></td>
-  </tr>
-  <tr>
-    <td></td>
-    <td></td>
-  </tr>
-  <tr>
-    <td></td>
-    <td></td>
-  </tr>
+  <% rows = (@count + 1)/2 %>
+  <% rows.times do %>
+      <tr>
+        <td></td>
+        <td></td>
+      </tr>
+  <% end %>
 </table>
 
 <script>
@@ -63,7 +54,7 @@
     $('#organization_select').change(function () {
 
         var selectedOrganization = $('#organization_select :selected').val();
-        console.log(selectedOrganization)
+//        console.log(selectedOrganization)
 
         $.ajax({
             url: '<%=find_update_chapters_path%>',
@@ -92,6 +83,34 @@
                 }
                 $('#chapter_select').select(0);
                 $('#chapter_select').change();
+            },
+            error: function (data) {
+                debugger;
+            }
+        });
+        $.ajax({
+            url: '<%=find_update_subjects_path%>',
+            type: 'GET',
+            dataType: 'json',
+            data: {
+                organization_id: selectedOrganization
+            },
+            success: function (data) {
+                var subjects = data.subjects;
+                debugger;
+
+                $('#subject_select').empty();
+
+                for (i = 0; i < subjects.length; i++) {
+                    var subject = subjects[i];
+
+                    var opt = document.createElement('option');
+                    opt.text = subject.subject_name;
+                    opt.value = subject.id;
+
+                    $('#subject_select').append(opt, null);
+                }
+                $('#subject_select').select(0);
             },
             error: function (data) {
                 debugger;

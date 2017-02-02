@@ -67,6 +67,7 @@ module MindleapsAnalytics
       categories3 = []
       series3 = []
       get_series_chart3(categories3, series3)
+      @count = categories3.count
       @categories3 = categories3.to_json
       @series3 = series3.to_json
 

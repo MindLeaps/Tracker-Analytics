@@ -16,5 +16,7 @@ MindleapsAnalytics::Engine.routes.draw do
 
   get 'find/update_students'
 
+  get 'find/update_subjects'
+
   root to: 'main#first'
 end
