@@ -53,15 +53,17 @@ module MindleapsAnalytics
       @group = params[:group_select]
       @subject = params[:subject_select]
 
-      if not params[:organization_select]
+      unless params[:organization_select]
         @organization = Organization.first.id
       end
-      if not params[:subject_select]
+      unless params[:subject_select]
         @subject = Subject.first.id
       end
 
       # figure 3: Histograms for the seven skills that are evaluated
-      # This chart has a categorical x-axis: the skills
+      # Both categories and series are arrays per skill:
+      # categories [skill * []]
+      # series [ skill * { name:"", data:[] } ]
       categories3 = []
       series3 = []
       get_series_chart3(categories3, series3)
@@ -77,9 +79,9 @@ module MindleapsAnalytics
       if not @group.nil? and not @group == '' and not @group == 'All'
         lessons = Lesson.where(group_id: @group)
       elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
-        lessons = Lesson.includes(:group).where(groups: {chapter_id: @chapter.to_i})
+        lessons = Lesson.includes(:group).where(groups: {chapter_id: @chapter})
       elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
-        lessons = Lesson.includes(group: :chapter).where(chapters: {organization_id: @organization.to_i})
+        lessons = Lesson.includes(group: :chapter).where(chapters: {organization_id: @organization})
       else
         lessons = Lesson.all
       end
@@ -139,9 +141,9 @@ module MindleapsAnalytics
       if not @group.nil? and not @group == '' and not @group == 'All'
         lessons = Lesson.where(group_id: @group)
       elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
-        lessons = Lesson.includes(:group).where(groups: {chapter_id: @chapter.to_i})
+        lessons = Lesson.includes(:group).where(groups: {chapter_id: @chapter})
       elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
-        lessons = Lesson.includes(group: :chapter).where(chapters: {organization_id: @organization.to_i})
+        lessons = Lesson.includes(group: :chapter).where(chapters: {organization_id: @organization})
       else
         lessons = Lesson.all
       end
@@ -182,9 +184,9 @@ module MindleapsAnalytics
       if not @group.nil? and not @group == '' and not @group == 'All'
         students = Student.where(group_id: @group)
       elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
-        students = Student.includes(:group).where(groups: {chapter_id: @chapter.to_i})
+        students = Student.includes(:group).where(groups: {chapter_id: @chapter})
       elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
-        students = Student.includes(group: :chapter).where(chapters: {organization_id: @organization.to_i})
+        students = Student.includes(group: :chapter).where(chapters: {organization_id: @organization})
       else
         students = Student.all
       end
@@ -240,9 +242,9 @@ module MindleapsAnalytics
       if not @group.nil? and not @group == '' and not @group == 'All'
         students = Student.where(group_id: @group)
       elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
-        students = Student.includes(:group).where(groups: {chapter_id: @chapter.to_i})
+        students = Student.includes(:group).where(groups: {chapter_id: @chapter})
       elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
-        students = Student.includes(group: :chapter).where(chapters: {organization_id: @organization.to_i})
+        students = Student.includes(group: :chapter).where(chapters: {organization_id: @organization})
       else
         students = Student.all
       end
@@ -285,9 +287,9 @@ module MindleapsAnalytics
       if not @group.nil? and not @group == '' and not @group == 'All'
         students = Student.where(group_id: @group)
       elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
-        students = Student.includes(:group).where(groups: {chapter_id: @chapter.to_i})
+        students = Student.includes(:group).where(groups: {chapter_id: @chapter})
       elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
-        students = Student.includes(group: :chapter).where(chapters: {organization_id: @organization.to_i})
+        students = Student.includes(group: :chapter).where(chapters: {organization_id: @organization})
       else
         students = Student.all
       end
@@ -305,9 +307,9 @@ module MindleapsAnalytics
           if not @group.nil? and not @group == '' and not @group == 'All'
             count = Grade.includes(:student).where(grade_descriptor_id: grade_descriptor.id, students: {group_id: @group}).count
           elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
-            count = Grade.includes(student: :group).where(grade_descriptor_id: grade_descriptor.id, groups: {chapter_id: @chapter.to_i}).count
+            count = Grade.includes(student: :group).where(grade_descriptor_id: grade_descriptor.id, groups: {chapter_id: @chapter}).count
           elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
-            count = Grade.includes(student: {group: :chapter}).where(grade_descriptor_id: grade_descriptor.id, chapters: {organization_id: @organization.to_i}).count
+            count = Grade.includes(student: {group: :chapter}).where(grade_descriptor_id: grade_descriptor.id, chapters: {organization_id: @organization}).count
           else
             count = Grade.where(grade_descriptor_id: grade_descriptor.id).count
           end
@@ -317,35 +319,22 @@ module MindleapsAnalytics
 
       end
 
-      cat = true
       series_double_hash.each do |skill_name, hash|
+        marks = []
         counts = []
         total = series_totals[skill_name]
-        categories << hash.keys
+
         hash.each do |mark, count|
-          # if cat
-          #   categories << mark
-          # end
           if not total == 0
+            marks << mark
             counts << (count * 100).to_f / total
           else
             counts << 0
           end
         end
-        cat = false
+        categories << marks
         series << {name: skill_name, data: counts}
       end
-
-      # # Array to contain the x and y values
-      # # x-axis = difference bin, y value = frequency
-      # data = []
-      #
-      # # Loop over the average performance bins
-      # # Map the hash keys back to x-axis bins and transform the y-axis counts to frequencies
-      # series_hash.each do |difference, count|
-      #   data << [ObjectSpace._id2ref(difference), (count * 100) / students.count]
-      # end
-      # series << {name: t(:frequency_perc), data: data}
 
     end
 
@@ -355,9 +344,9 @@ module MindleapsAnalytics
       if not @group.nil? and not @group == '' and not @group == 'All'
         students = Student.where(group_id: @group)
       elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
-        students = Student.includes(:group).where(groups: {chapter_id: @chapter.to_i})
+        students = Student.includes(:group).where(groups: {chapter_id: @chapter})
       elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
-        students = Student.includes(group: :chapter).where(chapters: {organization_id: @organization.to_i})
+        students = Student.includes(group: :chapter).where(chapters: {organization_id: @organization})
       else
         students = Student.all
       end
@@ -394,9 +383,9 @@ module MindleapsAnalytics
       if not @group.nil? and not @group == '' and not @group == 'All'
         dates = Lesson.where(group_id: @group).group(:date).count.keys
       elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
-        dates = Lesson.includes(:group).where(groups: {chapter_id: @chapter.to_i}).group(:date).count.keys
+        dates = Lesson.includes(:group).where(groups: {chapter_id: @chapter}).group(:date).count.keys
       elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
-        dates = Lesson.includes(group: :chapter).where(chapters: {organization_id: @organization.to_i}).group(:date).count.keys
+        dates = Lesson.includes(group: :chapter).where(chapters: {organization_id: @organization}).group(:date).count.keys
       else
         dates = Lesson.group(:date).count.keys
       end
