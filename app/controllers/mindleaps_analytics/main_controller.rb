@@ -331,7 +331,11 @@ module MindleapsAnalytics
           if cat
             categories << mark
           end
-          counts << (count * 100) / total
+          if not total == 0
+            counts << (count * 100) / total
+          else
+            counts << 0
+          end
         end
         cat = false
         series << {name: skill_name, data: counts}
