@@ -1,78 +1,137 @@
 <head>
   <script src="http://code.highcharts.com/highcharts.js"></script>
 </head>
-<h1>Main#first</h1>
-<p>Find me in app/views/mindleaps_analytics/main/first.html.erb</p>
-<%#= @series4 %>
+<h1>Analytics</h1>
+<!--<p>Find me in app/views/mindleaps_analytics/main/first.html.erb</p>-->
+<%#= @group == '' or @group.nil? %>
+<%#= @group.class %>
+<%#= @group %>
+<!--<br/>-->
+<%#= @chapter == '' or @chapter.nil? %>
+<%#= @chapter.class %>
+<%#= @chapter %>
 
+<%= form_tag do %>
+    <table>
+      <tr>
+        <td style="padding-right: 20px;">
+          <%= label_tag :organization_label, "Organization" %>
+          <%= select_tag :organization_select, options_from_collection_for_select(Organization.all, :id, :organization_name, @organization), :prompt => 'All' %>
+        </td>
+        <td style="padding-right: 20px;">
+          <%= label_tag :chapter_label, "Chapter" %>
+          <%= select_tag :chapter_select, options_from_collection_for_select(Chapter.all, :id, :chapter_name, @chapter), :prompt => 'All' %>
+        </td>
+        <td style="padding-right: 20px;">
+          <%= label_tag :group_label, "Group" %>
+          <%= select_tag :group_select, options_from_collection_for_select(Group.all, :id, :group_name, @group), :prompt => 'All' %>
+        </td>
+        <!--<td style="padding-right: 20px;">-->
+        <!--<%#= label_tag :student_select, "Student" %>-->
+        <!--<%#= select_tag :student_select, options_from_collection_for_select(Student.all, :id, :first_name, @selected_student) %>-->
+        <!--</td>-->
+        <td style="padding-right: 20px;">
+          <%= submit_tag "Submit" %>
+        </td>
+      </tr>
+    </table>
+<% end %>
 
-<table>
+<table style="width: 100%;">
   <tr>
-    <td>
-      <%= label_tag :chapter_select, "Chapter" %>
-      <%= select_tag :chapter_select, options_from_collection_for_select(Chapter.all, :id, :chapter_name, @selected_chapter) %>
+    <td style="width: 50%;">
+      <div id="chart2" style="width:100%; height:400px;"></div>
     </td>
-    <td>
-      <%= label_tag :group_select, "Group" %>
-      <%= select_tag :group_select, options_from_collection_for_select(Group.all, :id, :group_name, @selected_group) %>
+    <td style="width: 50%;">
+      <div id="chart4" style="width:100%; height:400px;"></div>
     </td>
-    <td>
-      <%= label_tag :student_select, "Student" %>
-      <%= select_tag :student_select, options_from_collection_for_select(Student.all, :id, :first_name, @selected_student) %>
+  </tr>
+  <tr>
+    <td style="width: 50%;">
+      <div id="chart5" style="width:100%; height:400px;"></div>
+    </td>
+    <td style="width: 50%;">
+      <div id="chart6" style="width:100%; height:400px;"></div>
+    </td>
+  </tr>
+  <tr>
+    <td style="width: 50%;">
+      <div id="chart8" style="width:100%; height:400px;"></div>
+    </td>
+    <td style="width: 50%;">
+      <div id="chart9" style="width:100%; height:400px;"></div>
     </td>
   </tr>
 </table>
 
-<p>
-<div id="chart2" style="width:100%; height:400px;"></div>
-</p>
-
-<p>
-<div id="chart4" style="width:100%; height:400px;"></div>
-</p>
-
-<p>
-<div id="chart5" style="width:100%; height:400px;"></div>
-</p>
-
-<p>
-<div id="chart6" style="width:100%; height:400px;"></div>
-</p>
-
-<p>
-<div id="chart8" style="width:100%; height:400px;"></div>
-</p>
-
-<p>
-<div id="chart9" style="width:100%; height:400px;"></div>
-</p>
-
 <script>
-    $('#group_select').change(function () {
+    $('#organization_select').change(function () {
 
-        var selectedGroup = $('#group_select :selected').val();
-//        console.log(selectedGroup)
+        var selectedOrganization = $('#organization_select :selected').val();
+        console.log(selectedOrganization)
 
         $.ajax({
-            url: '<%=find_update_students_path%>',
+            url: '<%=find_update_chapters_path%>',
             type: 'GET',
             dataType: 'json',
             data: {
-                group_id: selectedGroup
+                organization_id: selectedOrganization
             },
             success: function (data) {
-                var students = data.students;
+                var chapters = data.chapters;
                 debugger;
 
-                $('#student_select').empty();
-                for (i = 0; i < students.length; i++) {
-                    var student = students[i];
+                $('#chapter_select').empty();
+                var opt = document.createElement('option');
+                opt.text = 'All';
+                $('#chapter_select').append(opt, null);
+
+                for (i = 0; i < chapters.length; i++) {
+                    var chapter = chapters[i];
 
                     var opt = document.createElement('option');
-                    opt.text = student.last_name + ', ' + student.first_name;
-                    opt.value = student.id;
+                    opt.text = chapter.chapter_name;
+                    opt.value = chapter.id;
 
-                    $('#student_select').append(opt, null);
+                    $('#chapter_select').append(opt, null);
+                }
+                $('#chapter_select').select(0);
+                $('#chapter_select').change();
+            },
+            error: function (data) {
+                debugger;
+            }
+        });
+    });
+    $('#chapter_select').change(function () {
+
+        var selectedChapter = $('#chapter_select :selected').val();
+//        console.log(selectedChapter)
+
+        $.ajax({
+            url: '<%=find_update_groups_path%>',
+            type: 'GET',
+            dataType: 'json',
+            data: {
+                chapter_id: selectedChapter
+            },
+            success: function (data) {
+                var groups = data.groups;
+                debugger;
+
+                $('#group_select').empty();
+                var opt = document.createElement('option');
+                opt.text = 'All';
+
+                $('#group_select').append(opt, null);
+                for (i = 0; i < groups.length; i++) {
+                    var group = groups[i];
+
+                    var opt = document.createElement('option');
+                    opt.text = group.group_name;
+                    opt.value = group.id;
+
+                    $('#group_select').append(opt, null);
                 }
             },
             error: function (data) {
@@ -80,6 +139,39 @@
             }
         });
     });
+
+    //    $('#group_select').change(function () {
+    //
+    //        var selectedGroup = $('#group_select :selected').val();
+    ////        console.log(selectedGroup)
+    //
+    //        $.ajax({
+    //            url: '<%#=find_update_students_path%>',
+    //            type: 'GET',
+    //            dataType: 'json',
+    //            data: {
+    //                group_id: selectedGroup
+    //            },
+    //            success: function (data) {
+    //                var students = data.students;
+    //                debugger;
+    //
+    //                $('#student_select').empty();
+    //                for (i = 0; i < students.length; i++) {
+    //                    var student = students[i];
+    //
+    //                    var opt = document.createElement('option');
+    //                    opt.text = student.last_name + ', ' + student.first_name;
+    //                    opt.value = student.id;
+    //
+    //                    $('#student_select').append(opt, null);
+    //                }
+    //            },
+    //            error: function (data) {
+    //                debugger;
+    //            }
+    //        });
+    //    });
 
     $(function () {
 
@@ -100,17 +192,14 @@
                 title: {
                     text: '<%= t(:month) %>'
                 },
-                categories: <%= @x_axis2.inspect.html_safe %>
+                categories: <%= @categories2.inspect.html_safe %>
             },
             yAxis: {
                 title: {
                     text: '<%= t(:nr_of_assessments) %>'
                 }
             },
-            series: [{
-                name: '<%= t(:nr_of_assessments) %>',
-                data: <%= @y_axis2 %>
-            }]
+            series: <%= @series2.html_safe %>
         });
 
         var Chart4 = Highcharts.chart('chart4', {
