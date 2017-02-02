@@ -2,12 +2,6 @@
   <script src="http://code.highcharts.com/highcharts.js"></script>
 </head>
 <h1>Analytics (Subject)</h1>
-<!--<p>Find me in app/views/mindleaps_analytics/main/first.html.erb</p>-->
-<%#= @categories3 %>
-<!--<br/>-->
-<%#= @series3 %>
-<!--<br/>-->
-<%#= @count %>
 
 <%= form_tag do %>
     <table>
@@ -157,8 +151,8 @@
     $(function () {
         var charts = [],
             $containers = $('#trellis td'),
-            datasets = <%= @series3.html_safe %>;
-
+            datasets = <%= @series3.html_safe %>,
+            categories = <%= @categories3 %>;
 
         $.each(datasets, function (i, dataset) {
             charts.push(new Highcharts.Chart({
@@ -167,36 +161,30 @@
                     renderTo: $containers[i],
                     type: 'column'
                 },
-
                 title: {
-                    text: dataset.name,
-                    align: 'left',
-                    x: i === 0 ? 90 : 0
+                    text: dataset.name
                 },
-
                 credits: {
                     enabled: false
                 },
-
+                tooltip: {
+                    valueDecimals: 1
+                },
                 xAxis: {
-                    categories: <%= @categories3.html_safe %>,
+                    categories: categories[i],
                     labels: {
                         enabled: true
                     }
                 },
-
                 yAxis: {
                     allowDecimals: false,
                     title: {
                         text: '<%= t(:frequency_perc) %>'
                     }
                 },
-
-
                 legend: {
                     enabled: false
                 },
-
                 series: [dataset]
 
             }));

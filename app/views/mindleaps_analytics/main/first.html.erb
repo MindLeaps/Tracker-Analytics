@@ -2,14 +2,6 @@
   <script src="http://code.highcharts.com/highcharts.js"></script>
 </head>
 <h1>Analytics</h1>
-<!--<p>Find me in app/views/mindleaps_analytics/main/first.html.erb</p>-->
-<%#= @group == '' or @group.nil? %>
-<%#= @group.class %>
-<%#= @group %>
-<!--<br/>-->
-<%#= @chapter == '' or @chapter.nil? %>
-<%#= @chapter.class %>
-<%#= @chapter %>
 
 <%= form_tag do %>
     <table>
@@ -37,7 +29,7 @@
     </table>
 <% end %>
 
-<table style="width: 100%;">
+<table style="width: 100%; table-layout: fixed;">
   <tr>
     <td style="width: 50%;">
       <div id="chart2" style="width:100%; height:400px;"></div>
@@ -68,7 +60,7 @@
     $('#organization_select').change(function () {
 
         var selectedOrganization = $('#organization_select :selected').val();
-        console.log(selectedOrganization)
+//        console.log(selectedOrganization)
 
         $.ajax({
             url: '<%=find_update_chapters_path%>',
@@ -212,6 +204,9 @@
             credits: {
                 enabled: false
             },
+            tooltip: {
+                valueDecimals: 1
+            },
             title: {
                 text: '<%= t(:title_chart_4)%>'
             },
@@ -238,6 +233,9 @@
             credits: {
                 enabled: false
             },
+            tooltip: {
+                valueDecimals: 1
+            },
             title: {
                 text: '<%= t(:title_chart_5)%>'
             },
@@ -263,6 +261,9 @@
             },
             credits: {
                 enabled: false
+            },
+            tooltip: {
+                valueDecimals: 1
             },
             title: {
                 text: '<%= t(:title_chart_6)%>'

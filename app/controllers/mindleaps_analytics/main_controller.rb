@@ -227,7 +227,7 @@ module MindleapsAnalytics
         # Loop over the Difference bins: Expected 10 - 20 entries
         # Map the hash keys back to x-axis bins and transform the y-axis counts to frequencies
         hash.each do |difference, count|
-          data << [ObjectSpace._id2ref(difference), (count * 100) / series_totals_hash[key]]
+          data << [ObjectSpace._id2ref(difference), (count * 100).to_f / series_totals_hash[key]]
         end
         series << {name: t(:gender) + ' ' + key, data: data}
       end
@@ -273,7 +273,7 @@ module MindleapsAnalytics
       # Loop over the Difference bins: Expected 10 - 20 entries
       # Map the hash keys back to x-axis bins and transform the y-axis counts to frequencies
       series_hash.each do |difference, count|
-        data << [ObjectSpace._id2ref(difference), (count * 100) / students.count]
+        data << [ObjectSpace._id2ref(difference), (count * 100).to_f / students.count]
       end
       series << {name: t(:frequency_perc), data: data}
 
@@ -303,19 +303,14 @@ module MindleapsAnalytics
         series_double_hash[skill.skill_name] = Hash.new
         grade_descriptors.each do |grade_descriptor|
           if not @group.nil? and not @group == '' and not @group == 'All'
-            # students = Student.where(group_id: @group)
             count = Grade.includes(:student).where(grade_descriptor_id: grade_descriptor.id, students: {group_id: @group}).count
           elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
-            # students = Student.includes(:group).where(groups: {chapter_id: @chapter.to_i})
             count = Grade.includes(student: :group).where(grade_descriptor_id: grade_descriptor.id, groups: {chapter_id: @chapter.to_i}).count
           elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
-            # students = Student.includes(group: :chapter).where(chapters: {organization_id: @organization.to_i})
             count = Grade.includes(student: {group: :chapter}).where(grade_descriptor_id: grade_descriptor.id, chapters: {organization_id: @organization.to_i}).count
           else
-            # students = Student.all
             count = Grade.where(grade_descriptor_id: grade_descriptor.id).count
           end
-          # count = Grade.where(grade_descriptor_id: grade_descriptor.id).count
           series_double_hash[skill.skill_name][grade_descriptor.mark] = count
           series_totals[skill.skill_name] += count
         end
@@ -326,12 +321,13 @@ module MindleapsAnalytics
       series_double_hash.each do |skill_name, hash|
         counts = []
         total = series_totals[skill_name]
+        categories << hash.keys
         hash.each do |mark, count|
-          if cat
-            categories << mark
-          end
+          # if cat
+          #   categories << mark
+          # end
           if not total == 0
-            counts << (count * 100) / total
+            counts << (count * 100).to_f / total
           else
             counts << 0
           end
@@ -386,7 +382,7 @@ module MindleapsAnalytics
       # Loop over the average performance bins
       # Map the hash keys back to x-axis bins and transform the y-axis counts to frequencies
       series_hash.each do |difference, count|
-        data << [ObjectSpace._id2ref(difference), (count * 100) / students.count]
+        data << [ObjectSpace._id2ref(difference), (count * 100).to_f / students.count]
       end
       series << {name: t(:frequency_perc), data: data}
 
