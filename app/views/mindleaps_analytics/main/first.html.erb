@@ -2,6 +2,7 @@
   <script src="http://code.highcharts.com/highcharts.js"></script>
 </head>
 <h1>Analytics</h1>
+<%#= @lessons.to_a %>
 
 <%= form_tag do %>
     <table>
@@ -18,10 +19,10 @@
           <%= label_tag :group_label, "Group" %>
           <%= select_tag :group_select, options_from_collection_for_select(Group.all, :id, :group_name, @group), :prompt => 'All' %>
         </td>
-        <!--<td style="padding-right: 20px;">-->
-        <!--<%#= label_tag :student_select, "Student" %>-->
-        <!--<%#= select_tag :student_select, options_from_collection_for_select(Student.all, :id, :first_name, @selected_student) %>-->
-        <!--</td>-->
+        <td style="padding-right: 20px;">
+          <%= label_tag :student_label, "Student" %>
+          <%= select_tag :student_select, options_from_collection_for_select(Student.order(:last_name, :first_name).all, :id, :proper_name, @student), :prompt => 'All' %>
+        </td>
         <td style="padding-right: 20px;">
           <%= submit_tag "Submit" %>
         </td>
@@ -60,14 +61,18 @@
     $('#organization_select').change(function () {
 
         var selectedOrganization = $('#organization_select :selected').val();
-//        console.log(selectedOrganization)
+        var selectedChapter = $('#chapter_select :selected').val();
+        var selectedGroup = $('#group_select :selected').val();
+        console.debug(selectedOrganization);
 
         $.ajax({
             url: '<%=find_update_chapters_path%>',
             type: 'GET',
             dataType: 'json',
             data: {
-                organization_id: selectedOrganization
+                organization_id: selectedOrganization,
+                chapter_id: selectedChapter,
+                group_id: selectedGroup
             },
             success: function (data) {
                 var chapters = data.chapters;
@@ -97,15 +102,18 @@
     });
     $('#chapter_select').change(function () {
 
+        var selectedOrganization = $('#organization_select :selected').val();
         var selectedChapter = $('#chapter_select :selected').val();
-//        console.log(selectedChapter)
+        var selectedGroup = $('#group_select :selected').val();
 
         $.ajax({
             url: '<%=find_update_groups_path%>',
             type: 'GET',
             dataType: 'json',
             data: {
-                chapter_id: selectedChapter
+                organization_id: selectedOrganization,
+                chapter_id: selectedChapter,
+                group_id: selectedGroup
             },
             success: function (data) {
                 var groups = data.groups;
@@ -125,6 +133,8 @@
 
                     $('#group_select').append(opt, null);
                 }
+                $('#group_select').select(0);
+                $('#group_select').change();
             },
             error: function (data) {
                 debugger;
@@ -132,38 +142,45 @@
         });
     });
 
-    //    $('#group_select').change(function () {
-    //
-    //        var selectedGroup = $('#group_select :selected').val();
-    ////        console.log(selectedGroup)
-    //
-    //        $.ajax({
-    //            url: '<%#=find_update_students_path%>',
-    //            type: 'GET',
-    //            dataType: 'json',
-    //            data: {
-    //                group_id: selectedGroup
-    //            },
-    //            success: function (data) {
-    //                var students = data.students;
-    //                debugger;
-    //
-    //                $('#student_select').empty();
-    //                for (i = 0; i < students.length; i++) {
-    //                    var student = students[i];
-    //
-    //                    var opt = document.createElement('option');
-    //                    opt.text = student.last_name + ', ' + student.first_name;
-    //                    opt.value = student.id;
-    //
-    //                    $('#student_select').append(opt, null);
-    //                }
-    //            },
-    //            error: function (data) {
-    //                debugger;
-    //            }
-    //        });
-    //    });
+    $('#group_select').change(function () {
+
+        var selectedOrganization = $('#organization_select :selected').val();
+        var selectedChapter = $('#chapter_select :selected').val();
+        var selectedGroup = $('#group_select :selected').val();
+
+        $.ajax({
+            url: '<%=find_update_students_path%>',
+            type: 'GET',
+            dataType: 'json',
+            data: {
+                organization_id: selectedOrganization,
+                chapter_id: selectedChapter,
+                group_id: selectedGroup
+            },
+            success: function (data) {
+                var students = data.students;
+                debugger;
+
+                $('#student_select').empty();
+                var opt = document.createElement('option');
+                opt.text = 'All';
+
+                $('#student_select').append(opt, null);
+                for (i = 0; i < students.length; i++) {
+                    var student = students[i];
+
+                    var opt = document.createElement('option');
+                    opt.text = student.last_name + ', ' + student.first_name;
+                    opt.value = student.id;
+
+                    $('#student_select').append(opt, null);
+                }
+            },
+            error: function (data) {
+                debugger;
+            }
+        });
+    });
 
     $(function () {
 

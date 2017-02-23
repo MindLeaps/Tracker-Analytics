@@ -8,11 +8,11 @@ en:
   nr_of_assessments: Nr. of Assessments
   days_in_program: Days in program
   frequency_perc: Frequency %
-  above_regression: Above regression
-  below_regression: Below regression
+  above_regression: Above average performance
+  below_regression: Below average performance
 
   performance_vs_time: Performance vs. Time
-  title_chart_2: Number of evaluations in the MindLeaps program by month
+  title_chart_2: Quantity of Data Collected By Month
   title_chart_4: Histogram of student performance values
   title_chart_5: Performance change throughout the program by student
   title_chart_6: Performance change throughout the program separated by boys and girls

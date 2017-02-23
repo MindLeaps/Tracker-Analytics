@@ -8,6 +8,7 @@ module MindleapsAnalytics
       @organization = params[:organization_select]
       @chapter = params[:chapter_select]
       @group = params[:group_select]
+      @student = params[:student_select]
 
       # figure 2: # Assessments per month
       # This chart has a categorical x-axis: the months
@@ -34,6 +35,7 @@ module MindleapsAnalytics
       @series6 = series6.to_json
 
       # figure 8: Average performance per group by days in program
+      # Rebecca requested a Trellis per Group
       series8 = []
       get_series_chart8(series8)
       @series8 = series8.to_json
@@ -52,6 +54,7 @@ module MindleapsAnalytics
       @chapter = params[:chapter_select]
       @group = params[:group_select]
       @subject = params[:subject_select]
+      @student = params[:student_select]
 
       unless params[:organization_select]
         @organization = Organization.first.id
@@ -60,7 +63,7 @@ module MindleapsAnalytics
         @subject = Subject.first.id
       end
 
-      # figure 3: Histograms for the seven skills that are evaluated
+      # figure 3: Histograms (Trellis) for the seven skills that are evaluated
       # Both categories and series are arrays per skill:
       # categories [skill * []]
       # series [ skill * { name:"", data:[] } ]
@@ -73,10 +76,36 @@ module MindleapsAnalytics
 
     end
 
+    def third
+
+      @organization = params[:organization_select]
+      @chapter = params[:chapter_select]
+      @group = params[:group_select]
+      @subject = params[:subject_select]
+      @student = params[:student_select]
+
+      unless params[:organization_select]
+        @organization = Organization.first.id
+      end
+      unless params[:subject_select]
+        @subject = Subject.first.id
+      end
+
+      # figure 8: Average performance per group by days in program
+      # Rebecca requested a Trellis per Group
+      series8 = []
+      get_series_chart8(series8)
+      @count = series8.count
+      @series8 = series8.to_json
+
+    end
+
     def get_series_chart9(series)
 
       # top query
-      if not @group.nil? and not @group == '' and not @group == 'All'
+      if not @student.nil? and not @student == '' and not @student == 'All'
+        lessons = Lesson.includes(:grades).where(grades: {student_id: @student})
+      elsif not @group.nil? and not @group == '' and not @group == 'All'
         lessons = Lesson.where(group_id: @group)
       elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
         lessons = Lesson.includes(:group).where(groups: {chapter_id: @chapter})
@@ -92,12 +121,16 @@ module MindleapsAnalytics
 
       lessons.each do |lesson|
         # Find the students who attended this lesson
-        students = Student.includes(:grades).where(grades: {lesson_id: lesson.id})
+        if not @student.nil? and not @student == '' and not @student == 'All'
+          students = Student.includes(:grades).where(grades: {lesson_id: lesson.id}, id: @student)
+        else
+          students = Student.includes(:grades).where(grades: {lesson_id: lesson.id})
+        end
 
         students.each do |student|
           avg = Grade.where(lesson_id: lesson.id, student_id: student.id).joins(:grade_descriptor).average(:mark)
           # The number of lessons where this student participated in
-          nr_of_lessons = Lesson.includes(:grades).where("date < :date_to", {date_to: lesson.date}, grade: {student_id: student.id}).count
+          nr_of_lessons = Lesson.includes(:grades).where('date < :date_to', {date_to: lesson.date}, grade: {student_id: student.id}).count
 
           dob = student.dob
           now = lesson.date
@@ -112,7 +145,7 @@ module MindleapsAnalytics
           performance += 0.039 * age
 
           point = {}
-          point[:name] = student.last_name + ", " + student.first_name
+          point[:name] = student.last_name + ', ' + student.first_name
           point[:x] = nr_of_lessons
           point[:y] = avg.to_f
 
@@ -138,7 +171,9 @@ module MindleapsAnalytics
     def get_series_chart8(series)
 
       # top query
-      if not @group.nil? and not @group == '' and not @group == 'All'
+      if not @student.nil? and not @student == '' and not @student == 'All'
+        lessons = Lesson.includes(:grades).where(grades: {student_id: @student})
+      elsif not @group.nil? and not @group == '' and not @group == 'All'
         lessons = Lesson.where(group_id: @group)
       elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
         lessons = Lesson.includes(:group).where(groups: {chapter_id: @chapter})
@@ -154,10 +189,9 @@ module MindleapsAnalytics
       # Calculate the average performance for this lesson and group
       lessons.each do |lesson|
         # Count the number of previous lessons for this group
-        nr_of_lessons = Lesson.where("group_id = :group_id AND date < :date_to",
+        nr_of_lessons = Lesson.where('group_id = :group_id AND date < :date_to',
                                      {group_id: lesson.group_id, date_to: lesson.date}).distinct.count(:id)
         # Determine the average group performance for this lesson
-        # avg = Grade.includes(:lesson).where(lessons: {id: lesson.id}).joins(:grade_descriptor).average(:mark)
         avg = Grade.where(lesson_id: lesson.id).joins(:grade_descriptor).average(:mark)
 
         point = []
@@ -181,7 +215,9 @@ module MindleapsAnalytics
     def get_series_chart6(series)
 
       # top query
-      if not @group.nil? and not @group == '' and not @group == 'All'
+      if not @student.nil? and not @student == '' and not @student == 'All'
+        students = Student.where(id: @student)
+      elsif not @group.nil? and not @group == '' and not @group == 'All'
         students = Student.where(group_id: @group)
       elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
         students = Student.includes(:group).where(groups: {chapter_id: @chapter})
@@ -239,7 +275,9 @@ module MindleapsAnalytics
     def get_series_chart5(series)
 
       # top query
-      if not @group.nil? and not @group == '' and not @group == 'All'
+      if not @student.nil? and not @student == '' and not @student == 'All'
+        students = Student.where(id: @student)
+      elsif not @group.nil? and not @group == '' and not @group == 'All'
         students = Student.where(group_id: @group)
       elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
         students = Student.includes(:group).where(groups: {chapter_id: @chapter})
@@ -282,17 +320,6 @@ module MindleapsAnalytics
     end
 
     def get_series_chart3(categories, series)
-
-      # top query
-      if not @group.nil? and not @group == '' and not @group == 'All'
-        students = Student.where(group_id: @group)
-      elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
-        students = Student.includes(:group).where(groups: {chapter_id: @chapter})
-      elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
-        students = Student.includes(group: :chapter).where(chapters: {organization_id: @organization})
-      else
-        students = Student.all
-      end
 
       skills = Skill.includes(:assignments).where(organization_id: @organization, assignments: {subject_id: @subject})
 
@@ -341,7 +368,9 @@ module MindleapsAnalytics
     def get_series_chart4(series)
 
       # top query
-      if not @group.nil? and not @group == '' and not @group == 'All'
+      if not @student.nil? and not @student == '' and not @student == 'All'
+        students = Student.where(id: @student)
+      elsif not @group.nil? and not @group == '' and not @group == 'All'
         students = Student.where(group_id: @group)
       elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
         students = Student.includes(:group).where(groups: {chapter_id: @chapter})
@@ -380,7 +409,10 @@ module MindleapsAnalytics
     def get_series_chart2(categories, series)
 
       # top query
-      if not @group.nil? and not @group == '' and not @group == 'All'
+      if not @student.nil? and not @student == '' and not @student == 'All'
+        #dates = Grade.joins(:lesson).where(student_id: @student).group(:date).count.keys
+        dates = Lesson.includes(:grades).where(grades: {student_id: @student}).group(:date).count.keys
+      elsif not @group.nil? and not @group == '' and not @group == 'All'
         dates = Lesson.where(group_id: @group).group(:date).count.keys
       elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
         dates = Lesson.includes(:group).where(groups: {chapter_id: @chapter}).group(:date).count.keys
@@ -405,18 +437,19 @@ module MindleapsAnalytics
       months_sorted.each do |key, values|
         from = Date.new(values[0], values[1], 1)
         to = Date.new(values[0], values[1], 1).at_end_of_month
-        lessons = Lesson.where("date >= :date_from AND date <= :date_to", {date_from: from, date_to: to})
+        lessons = Lesson.where('date >= :date_from AND date <= :date_to', {date_from: from, date_to: to})
         nr_of_assessments = 0
         lessons.each do |lesson|
-          nr_of_assessments += Grade.where(lesson_id: lesson.id).distinct.count(:student_id)
+          if not @student.nil? and not @student == '' and not @student == 'All'
+            nr_of_assessments += Grade.where(lesson_id: lesson.id, student: @student).distinct.count(:student_id)
+          else
+            nr_of_assessments += Grade.where(lesson_id: lesson.id).distinct.count(:student_id)
+          end
         end
         categories << key.to_s
         data << nr_of_assessments
       end
       series << {name: t(:nr_of_assessments), data: data}
-    end
-
-    def third
     end
 
   end

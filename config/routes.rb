@@ -10,6 +10,8 @@ MindleapsAnalytics::Engine.routes.draw do
 
   get 'main/third'
 
+  post 'main/third'
+
   get 'find/update_chapters'
 
   get 'find/update_groups'
