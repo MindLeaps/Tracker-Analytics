@@ -2,6 +2,7 @@
   <script src="http://code.highcharts.com/highcharts.js"></script>
 </head>
 <h1>Analytics (Subject)</h1>
+<%= @nr_of_lessons %>
 
 <%= form_tag do %>
     <table>
@@ -19,13 +20,13 @@
           <%= select_tag :group_select, options_from_collection_for_select(Group.all, :id, :group_name, @group), :prompt => 'All' %>
         </td>
         <td style="padding-right: 20px;">
+          <%= label_tag :student_label, "Student" %>
+          <%= select_tag :student_select, options_from_collection_for_select(Student.order(:last_name, :first_name).all, :id, :proper_name, @student), :prompt => 'All' %>
+        </td>
+        <td style="padding-right: 20px;">
           <%= label_tag :subject_label, "Subject" %>
           <%= select_tag :subject_select, options_from_collection_for_select(Subject.all, :id, :subject_name, @subject) %>
         </td>
-        <!--<td style="padding-right: 20px;">-->
-        <!--<%#= label_tag :student_select, "Student" %>-->
-        <!--<%#= select_tag :student_select, options_from_collection_for_select(Student.all, :id, :first_name, @selected_student) %>-->
-        <!--</td>-->
         <td style="padding-right: 20px;">
           <%= submit_tag "Submit" %>
         </td>
@@ -148,44 +149,83 @@
         });
     });
 
+    $('#group_select').change(function () {
+
+        var selectedOrganization = $('#organization_select :selected').val();
+        var selectedChapter = $('#chapter_select :selected').val();
+        var selectedGroup = $('#group_select :selected').val();
+
+        $.ajax({
+            url: '<%=find_update_students_path%>',
+            type: 'GET',
+            dataType: 'json',
+            data: {
+                organization_id: selectedOrganization,
+                chapter_id: selectedChapter,
+                group_id: selectedGroup
+            },
+            success: function (data) {
+                var students = data.students;
+                debugger;
+
+                $('#student_select').empty();
+                var opt = document.createElement('option');
+                opt.text = 'All';
+
+                $('#student_select').append(opt, null);
+                for (i = 0; i < students.length; i++) {
+                    var student = students[i];
+
+                    var opt = document.createElement('option');
+                    opt.text = student.last_name + ', ' + student.first_name;
+                    opt.value = student.id;
+
+                    $('#student_select').append(opt, null);
+                }
+            },
+            error: function (data) {
+                debugger;
+            }
+        });
+    });
+
     $(function () {
         var charts = [],
             $containers = $('#trellis td'),
-            datasets = <%= @series3.html_safe %>,
-            categories = <%= @categories3 %>;
+            datasets = <%= @series3.html_safe %>;
 
         $.each(datasets, function (i, dataset) {
+            console.log(dataset);
             charts.push(new Highcharts.Chart({
 
                 chart: {
                     renderTo: $containers[i],
-                    type: 'column'
+                    type: 'scatter'
                 },
-                title: {
-                    text: dataset.name
+                legend: {
+                    enabled: true
                 },
                 credits: {
                     enabled: false
                 },
                 tooltip: {
-                    valueDecimals: 1
+                    valueDecimals: 2
+                },
+                title: {
+                    text: dataset.skill
                 },
                 xAxis: {
-                    categories: categories[i],
-                    labels: {
-                        enabled: true
+                    title: {
+                        text: '<%= t(:nr_of_lessons) %>'
                     }
                 },
                 yAxis: {
                     allowDecimals: false,
                     title: {
-                        text: '<%= t(:frequency_perc) %>'
+                        text: '<%= t(:performance)%>'
                     }
                 },
-                legend: {
-                    enabled: false
-                },
-                series: [dataset]
+                series: dataset.series
 
             }));
         });

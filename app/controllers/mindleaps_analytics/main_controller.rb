@@ -64,14 +64,13 @@ module MindleapsAnalytics
       end
 
       # figure 3: Histograms (Trellis) for the seven skills that are evaluated
-      # Both categories and series are arrays per skill:
-      # categories [skill * []]
-      # series [ skill * { name:"", data:[] } ]
-      categories3 = []
+      # multiple series (1 per group) per histogram;
+      # x-axis: nr. of lessons
+      # y-axis: average score
+      # series = [{skill : skill_name, series : [{name : group_name, data : [[x, y], ..]}]}]
       series3 = []
-      get_series_chart3(categories3, series3)
-      @count = categories3.count
-      @categories3 = categories3.to_json
+      get_series_chart3(series3)
+      @count = series3.count
       @series3 = series3.to_json
 
     end
@@ -319,48 +318,76 @@ module MindleapsAnalytics
 
     end
 
-    def get_series_chart3(categories, series)
+    def get_series_chart3(series)
 
       skills = Skill.includes(:assignments).where(organization_id: @organization, assignments: {subject_id: @subject})
 
       series_double_hash = Hash.new
-      series_totals = Hash.new(0)
-      skills.each do |skill|
 
-        grade_descriptors = GradeDescriptor.where(skill_id: skill.id)
-
-        series_double_hash[skill.skill_name] = Hash.new
-        grade_descriptors.each do |grade_descriptor|
-          if not @group.nil? and not @group == '' and not @group == 'All'
-            count = Grade.includes(:student).where(grade_descriptor_id: grade_descriptor.id, students: {group_id: @group}).count
-          elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
-            count = Grade.includes(student: :group).where(grade_descriptor_id: grade_descriptor.id, groups: {chapter_id: @chapter}).count
-          elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
-            count = Grade.includes(student: {group: :chapter}).where(grade_descriptor_id: grade_descriptor.id, chapters: {organization_id: @organization}).count
-          else
-            count = Grade.where(grade_descriptor_id: grade_descriptor.id).count
-          end
-          series_double_hash[skill.skill_name][grade_descriptor.mark] = count
-          series_totals[skill.skill_name] += count
-        end
-
+      # top query
+      if not @student.nil? and not @student == '' and not @student == 'All'
+        lessons = Lesson.includes(:grades).where(grades: {student_id: @student})
+      elsif not @group.nil? and not @group == '' and not @group == 'All'
+        lessons = Lesson.where(group_id: @group)
+      elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
+        lessons = Lesson.includes(:group).where(groups: {chapter_id: @chapter})
+      elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
+        lessons = Lesson.includes(group: :chapter).where(chapters: {organization_id: @organization})
+      else
+        lessons = Lesson.all
       end
 
-      series_double_hash.each do |skill_name, hash|
-        marks = []
-        counts = []
-        total = series_totals[skill_name]
+      # Hash to contain the groups series, so one entry per group
+      # series_hash = Hash.new
 
-        hash.each do |mark, count|
-          if not total == 0
-            marks << mark
-            counts << (count * 100).to_f / total
-          else
-            counts << 0
-          end
+      # Calculate the average performance for this lesson and group
+      lessons.each do |lesson|
+        if not @student.nil? and not @student == '' and not @student == 'All'
+          nr_of_lessons = Lesson.includes(:grades).where('date < :date_to', {date_to: lesson.date}).where(grades: {student_id: @student}).distinct.count(:id)
+        else
+          # Count the number of previous lessons for this group
+          nr_of_lessons = Lesson.where('group_id = :group_id AND date < :date_to',
+                                       {group_id: lesson.group_id, date_to: lesson.date}).distinct.count(:id)
         end
-        categories << marks
-        series << {name: skill_name, data: counts}
+
+        skills.each do |skill|
+          if not @student.nil? and not @student == '' and not @student == 'All'
+            avg = Grade.includes(:grade_descriptor).where(lesson_id: lesson.id, student_id: @student, grade_descriptors: {skill_id: skill.id}).joins(:grade_descriptor).average(:mark)
+          else
+            # Determine the average group performance for this lesson
+            avg = Grade.includes(:grade_descriptor).where(lesson_id: lesson.id, grade_descriptors: {skill_id: skill.id}).joins(:grade_descriptor).average(:mark)
+          end
+
+          point = []
+          point << nr_of_lessons
+          point << avg.to_f
+
+          if series_double_hash[skill.skill_name] == nil
+            series_double_hash[skill.skill_name] = Hash.new
+          end
+
+          # add this point to the correct (meaning: this Group's) data series
+          if series_double_hash[skill.skill_name][lesson.group.group_name] == nil
+            series_double_hash[skill.skill_name][lesson.group.group_name] = []
+          end
+          # series_hash[lesson.group.group_name] << point
+          series_double_hash[skill.skill_name][lesson.group.group_name] << point
+        end
+      end
+
+      # Calculation is done, now convert the series_hash to something HighCharts understands
+      # series_double_hash.each do |skill, hash|
+      #   series[skill] = []
+      #   hash.each do |group, array|
+      #     series[skill] << {name: t(:group) + ' ' + group, data: array}
+      #   end
+      # end
+      series_double_hash.each do |skill, hash|
+        skill_series = []
+        hash.each do |group, array|
+          skill_series << {name: t(:group) + ' ' + group, data: array}
+        end
+        series << {skill: skill, series: skill_series}
       end
 
     end
@@ -453,4 +480,6 @@ module MindleapsAnalytics
     end
 
   end
+
 end
+
