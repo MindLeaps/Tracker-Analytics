@@ -8,11 +8,11 @@
       <tr>
         <td style="padding-right: 20px;">
           <%= label_tag :organization_label, "Organization" %>
-          <%= select_tag :organization_select, options_from_collection_for_select(Organization.all, :id, :organization_name, @organization), :prompt => 'All' %>
+          <%= select_tag :organization_select, options_from_collection_for_select(@organizations, :id, :organization_name, @organization), :prompt => 'All' %>
         </td>
         <td style="padding-right: 20px;">
           <%= label_tag :chapter_label, "Chapter" %>
-          <%= select_tag :chapter_select, options_from_collection_for_select(Chapter.all, :id, :chapter_name, @chapter), :prompt => 'All' %>
+          <%= select_tag :chapter_select, options_from_collection_for_select(@chapters, :id, :chapter_name, @chapter), :prompt => 'All' %>
         </td>
         <td style="padding-right: 20px;">
           <%= submit_tag "Submit" %>

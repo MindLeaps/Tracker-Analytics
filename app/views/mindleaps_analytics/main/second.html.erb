@@ -9,23 +9,23 @@
       <tr>
         <td style="padding-right: 20px;">
           <%= label_tag :organization_label, "Organization" %>
-          <%= select_tag :organization_select, options_from_collection_for_select(Organization.all, :id, :organization_name, @organization) %>
+          <%= select_tag :organization_select, options_from_collection_for_select(@organizations, :id, :organization_name, @organization) %>
         </td>
         <td style="padding-right: 20px;">
           <%= label_tag :chapter_label, "Chapter" %>
-          <%= select_tag :chapter_select, options_from_collection_for_select(Chapter.all, :id, :chapter_name, @chapter), :prompt => 'All' %>
+          <%= select_tag :chapter_select, options_from_collection_for_select(@chapters, :id, :chapter_name, @chapter), :prompt => 'All' %>
         </td>
         <td style="padding-right: 20px;">
           <%= label_tag :group_label, "Group" %>
-          <%= select_tag :group_select, options_from_collection_for_select(Group.all, :id, :group_name, @group), :prompt => 'All' %>
+          <%= select_tag :group_select, options_from_collection_for_select(@groups, :id, :group_name, @group), :prompt => 'All' %>
         </td>
         <td style="padding-right: 20px;">
           <%= label_tag :student_label, "Student" %>
-          <%= select_tag :student_select, options_from_collection_for_select(Student.order(:last_name, :first_name).all, :id, :proper_name, @student), :prompt => 'All' %>
+          <%= select_tag :student_select, options_from_collection_for_select(@students, :id, :proper_name, @student), :prompt => 'All' %>
         </td>
         <td style="padding-right: 20px;">
           <%= label_tag :subject_label, "Subject" %>
-          <%= select_tag :subject_select, options_from_collection_for_select(Subject.all, :id, :subject_name, @subject) %>
+          <%= select_tag :subject_select, options_from_collection_for_select(@subjects, :id, :subject_name, @subject) %>
         </td>
         <td style="padding-right: 20px;">
           <%= submit_tag "Submit" %>

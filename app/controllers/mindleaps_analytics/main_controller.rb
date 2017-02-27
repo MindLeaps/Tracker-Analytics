@@ -10,6 +10,31 @@ module MindleapsAnalytics
       @group = params[:group_select]
       @student = params[:student_select]
 
+      @organizations = Organization.all
+      if not @organization.nil? and not @organization == '' and not @organization == 'All'
+        @chapters = Chapter.where(organization_id: @organization)
+      else
+        @chapters = Chapter.all
+      end
+
+      if not @group.nil? and not @group == '' and not @group == 'All'
+        @groups = Group.where(chapter_id: @chapter)
+      elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
+        @groups = Group.includes(:chapter).where(chapters: {organization_id: @organization})
+      else
+        @groups = Group.all
+      end
+
+      if not @group.nil? and not @group == '' and not @group == 'All'
+        @students = Student.where(group_id: @group).order(:last_name, :first_name).all
+      elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
+        @students = Student.includes(:group).where(groups: {chapter_id: @chapter}).order(:last_name, :first_name).all
+      elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
+        @students = Student.includes(group: :chapter).where(chapters: {organization_id: @organization}).order(:last_name, :first_name).all
+      else
+        @students = Student.order(:last_name, :first_name).all
+      end
+
       # figure 2: # Assessments per month
       # This chart has a categorical x-axis: the months
       categories2 = []
@@ -56,6 +81,37 @@ module MindleapsAnalytics
       @subject = params[:subject_select]
       @student = params[:student_select]
 
+      @organizations = Organization.all
+      if not @organization.nil? and not @organization == '' and not @organization == 'All'
+        @chapters = Chapter.where(organization_id: @organization)
+      else
+        @chapters = Chapter.all
+      end
+
+      if not @group.nil? and not @group == '' and not @group == 'All'
+        @groups = Group.where(chapter_id: @chapter)
+      elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
+        @groups = Group.includes(:chapter).where(chapters: {organization_id: @organization})
+      else
+        @groups = Group.all
+      end
+
+      if not @group.nil? and not @group == '' and not @group == 'All'
+        @students = Student.where(group_id: @group).order(:last_name, :first_name).all
+      elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
+        @students = Student.includes(:group).where(groups: {chapter_id: @chapter}).order(:last_name, :first_name).all
+      elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
+        @students = Student.includes(group: :chapter).where(chapters: {organization_id: @organization}).order(:last_name, :first_name).all
+      else
+        @students = Student.order(:last_name, :first_name).all
+      end
+
+      if not @organization.nil? and not @organization == '' and not @organization == 'All'
+        @subjects = Subject.where(organization: @organization)
+      else
+        @subjects = Subject.all
+      end
+
       unless params[:organization_select]
         @organization = Organization.first.id
       end
@@ -83,12 +139,43 @@ module MindleapsAnalytics
       @subject = params[:subject_select]
       @student = params[:student_select]
 
+      @organizations = Organization.all
+      if not @organization.nil? and not @organization == '' and not @organization == 'All'
+        @chapters = Chapter.where(organization_id: @organization)
+      else
+        @chapters = Chapter.all
+      end
+
+      # if not @group.nil? and not @group == '' and not @group == 'All'
+      #   @groups = Group.where(chapter_id: @chapter)
+      # elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
+      #   @groups = Group.includes(:chapter).where(chapters: {organization_id: @organization})
+      # else
+      #   @groups = Group.all
+      # end
+      #
+      # if not @group.nil? and not @group == '' and not @group == 'All'
+      #   @students = Student.where(group_id: @group).order(:last_name, :first_name).all
+      # elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
+      #   @students = Student.includes(:group).where(groups: {chapter_id: @chapter}).order(:last_name, :first_name).all
+      # elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
+      #   @students = Student.includes(group: :chapter).where(chapters: {organization_id: @organization}).order(:last_name, :first_name).all
+      # else
+      #   @students = Student.order(:last_name, :first_name).all
+      # end
+      #
+      # if not @organization.nil? and not @organization == '' and not @organization == 'All'
+      #   @subjects = Subject.where(organization: @organization)
+      # else
+      #   @subjects = Subject.all
+      # end
+
       unless params[:organization_select]
         @organization = Organization.first.id
       end
-      unless params[:subject_select]
-        @subject = Subject.first.id
-      end
+      # unless params[:subject_select]
+      #   @subject = Subject.first.id
+      # end
 
       # figure 8: Average performance per group by days in program
       # Rebecca requested a Trellis per Group
