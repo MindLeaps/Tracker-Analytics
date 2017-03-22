@@ -1,0 +1,27 @@
+<%= form_for(regression_parameter) do |f| %>
+  <% if regression_parameter.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(regression_parameter.errors.count, "error") %> prohibited this regression_parameter from being saved:</h2>
+
+      <ul>
+      <% regression_parameter.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= f.label :name %>
+    <%= f.text_field :name %>
+  </div>
+
+  <div class="field">
+    <%= f.label :value %>
+    <%= f.text_field :value %>
+  </div>
+
+  <div class="actions">
+    <%= f.submit %>
+  </div>
+<% end %>

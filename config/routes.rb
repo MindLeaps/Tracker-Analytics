@@ -1,5 +1,6 @@
 MindleapsAnalytics::Engine.routes.draw do
 
+  resources :regression_parameters
   get 'main/first'
 
   post 'main/first'

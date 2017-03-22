@@ -188,6 +188,14 @@ module MindleapsAnalytics
 
     def get_series_chart9(series)
 
+      # regression parameters
+      p_intercept = RegressionParameter.where(name: 'intercept').first.value
+      p_t1 = RegressionParameter.where(name: 't1').first.value
+      p_t2 = RegressionParameter.where(name: 't2').first.value
+      p_t3 = RegressionParameter.where(name: 't3').first.value
+      p_t4 = RegressionParameter.where(name: 't4').first.value
+      p_age = RegressionParameter.where(name: 'age').first.value
+
       # top query
       if not @student.nil? and not @student == '' and not @student == 'All'
         lessons = Lesson.includes(:grades).where(grades: {student_id: @student})
@@ -223,12 +231,12 @@ module MindleapsAnalytics
           age = now.year - dob.year - ((now.month > dob.month || (now.month == dob.month && now.day >= dob.day)) ? 0 : 1)
 
           # Non-linear multivariate regression formula
-          performance = 3.31
-          performance += 1.72*(10**-2) * nr_of_lessons
-          performance += -8.14*(10**-5) * nr_of_lessons**2
-          performance += 1.63*(10**-7) * nr_of_lessons**3
-          performance += -1.12*(10**-10) * nr_of_lessons**4
-          performance += 0.039 * age
+          performance = p_intercept
+          performance += p_t1 * nr_of_lessons
+          performance += p_t2 * nr_of_lessons**2
+          performance += p_t3 * nr_of_lessons**3
+          performance += p_t4 * nr_of_lessons**4
+          performance += p_age * age
 
           point = {}
           point[:name] = student.last_name + ', ' + student.first_name
