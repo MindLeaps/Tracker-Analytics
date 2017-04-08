@@ -146,36 +146,9 @@ module MindleapsAnalytics
         @chapters = Chapter.all
       end
 
-      # if not @group.nil? and not @group == '' and not @group == 'All'
-      #   @groups = Group.where(chapter_id: @chapter)
-      # elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
-      #   @groups = Group.includes(:chapter).where(chapters: {organization_id: @organization})
-      # else
-      #   @groups = Group.all
-      # end
-      #
-      # if not @group.nil? and not @group == '' and not @group == 'All'
-      #   @students = Student.where(group_id: @group).order(:last_name, :first_name).all
-      # elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
-      #   @students = Student.includes(:group).where(groups: {chapter_id: @chapter}).order(:last_name, :first_name).all
-      # elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
-      #   @students = Student.includes(group: :chapter).where(chapters: {organization_id: @organization}).order(:last_name, :first_name).all
-      # else
-      #   @students = Student.order(:last_name, :first_name).all
-      # end
-      #
-      # if not @organization.nil? and not @organization == '' and not @organization == 'All'
-      #   @subjects = Subject.where(organization: @organization)
-      # else
-      #   @subjects = Subject.all
-      # end
-
       unless params[:organization_select]
         @organization = Organization.first.id
       end
-      # unless params[:subject_select]
-      #   @subject = Subject.first.id
-      # end
 
       # figure 8: Average performance per group by days in program
       # Rebecca requested a Trellis per Group
@@ -432,17 +405,37 @@ module MindleapsAnalytics
         lessons = Lesson.all
       end
 
-      # Hash to contain the groups series, so one entry per group
-      # series_hash = Hash.new
-
       # Calculate the average performance for this lesson and group
+      age = 0
       lessons.each do |lesson|
         if not @student.nil? and not @student == '' and not @student == 'All'
           nr_of_lessons = Lesson.includes(:grades).where('date < :date_to', {date_to: lesson.date}).where(grades: {student_id: @student}).distinct.count(:id)
+
+          # This student's age (for regression calculation)
+          dob = @student.dob
+          now = lesson.date
+          age = now.year - dob.year - ((now.month > dob.month || (now.month == dob.month && now.day >= dob.day)) ? 0 : 1)
         else
           # Count the number of previous lessons for this group
           nr_of_lessons = Lesson.where('group_id = :group_id AND date < :date_to',
                                        {group_id: lesson.group_id, date_to: lesson.date}).distinct.count(:id)
+
+          # Calculate the average age for the group (for regression calculation)
+          #
+          # Below code is correct but a performance killer
+          # Also, the regression parameters for age are quite small, making its impact on overall fitted performance small
+          # It's questionable if the costs outweigh the benefits, so for now let's make age a constant
+          # </
+          # now = lesson.date
+          # grades = lesson.grades.all
+          # grades.each do |grade|
+          #   dob = grade.student.dob
+          #   age += now.year - dob.year - ((now.month > dob.month || (now.month == dob.month && now.day >= dob.day)) ? 0 : 1)
+          # end
+          # age /= lesson.grades.size
+          age = 13
+          # />
+
         end
 
         skills.each do |skill|
@@ -457,6 +450,54 @@ module MindleapsAnalytics
           point << nr_of_lessons
           point << avg.to_f
 
+          fitted = []
+          fitted << nr_of_lessons
+          case skill.skill_name
+            when 'Memorization'
+              p_t1 = 0.059758
+              p_t2 = -0.00076705
+              p_t3 = 4.3031e-06
+              p_t4 = -8.3512e-09
+              p_age = 0.050686
+            when 'Grit'
+              p_t1 = 0.026253
+              p_t2 = -0.00033544
+              p_t3 = 1.9132e-06
+              p_t4 = -3.6252e-09
+              p_age = 0.038559
+            when 'Teamwork'
+              p_t1 = 0.055124
+              p_t2 = -0.00069727
+              p_t3 = 3.6287e-06
+              p_t4 = -6.3662e-09
+              p_age = 0.05823
+            when 'Discipline'
+              p_t1 = 0.026199
+              p_t2 = -0.00035038
+              p_t3 = 2.0376e-06
+              p_t4 = -4.0821e-09
+              p_age = 0.062841
+            when 'Self-Esteem'
+              p_t1 = 0.054099
+              p_t2 = -0.00068634
+              p_t3 = 3.6989e-06
+              p_t4 = -6.8504e-09
+              p_age = 0.039392
+            when 'Creativity & Self-Expression'
+              p_t1 = 0.051559
+              p_t2 = -0.0006465
+              p_t3 = 3.5453e-06
+              p_t4 = -6.7835e-09
+              p_age = 0.041264
+            when 'Language'
+              p_t1 = 0.079468
+              p_t2 = -0.0010474
+              p_t3 = 5.6985e-06
+              p_t4 = -1.0727e-08
+              p_age = 0.050222
+          end
+          fitted << 3.5 + p_t1 * nr_of_lessons + p_t2 * nr_of_lessons**2 + p_t3 * nr_of_lessons**3 + p_t4 * nr_of_lessons**4 + p_age * age
+
           if series_double_hash[skill.skill_name] == nil
             series_double_hash[skill.skill_name] = Hash.new
           end
@@ -465,8 +506,12 @@ module MindleapsAnalytics
           if series_double_hash[skill.skill_name][lesson.group.group_name] == nil
             series_double_hash[skill.skill_name][lesson.group.group_name] = []
           end
+          if series_double_hash[skill.skill_name][lesson.group.group_name + ' fitted'] == nil
+            series_double_hash[skill.skill_name][lesson.group.group_name + ' fitted'] = []
+          end
           # series_hash[lesson.group.group_name] << point
           series_double_hash[skill.skill_name][lesson.group.group_name] << point
+          series_double_hash[skill.skill_name][lesson.group.group_name + ' fitted'] << fitted
         end
       end
 
