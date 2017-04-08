@@ -446,10 +446,12 @@ module MindleapsAnalytics
             avg = Grade.includes(:grade_descriptor).where(lesson_id: lesson.id, grade_descriptors: {skill_id: skill.id}).joins(:grade_descriptor).average(:mark)
           end
 
+          # Actual performance
           point = []
           point << nr_of_lessons
           point << avg.to_f
 
+          # Prediction based on the regression model
           fitted = []
           fitted << nr_of_lessons
           case skill.skill_name
@@ -496,6 +498,7 @@ module MindleapsAnalytics
               p_t4 = -1.0727e-08
               p_age = 0.050222
           end
+          # No intercept value given bij Patrick, so we use the average over all the group values here (=3.5)
           fitted << 3.5 + p_t1 * nr_of_lessons + p_t2 * nr_of_lessons**2 + p_t3 * nr_of_lessons**3 + p_t4 * nr_of_lessons**4 + p_age * age
 
           if series_double_hash[skill.skill_name] == nil
