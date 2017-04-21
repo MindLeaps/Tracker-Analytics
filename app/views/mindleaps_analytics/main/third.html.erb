@@ -167,7 +167,7 @@
 
                 chart: {
                     renderTo: $containers[i],
-                    type: 'scatter'
+                    type: 'line'
                 },
                 title: {
                     text: dataset.name
@@ -192,7 +192,7 @@
                 legend: {
                     enabled: false
                 },
-                series: [dataset]
+                series: dataset.series
 
             }));
         });

@@ -60,10 +60,9 @@ module MindleapsAnalytics
       @series6 = series6.to_json
 
       # figure 8: Average performance per group by days in program
-      # Rebecca requested a Trellis per Group
-      series8 = []
-      get_series_chart8(series8)
-      @series8 = series8.to_json
+      series10 = []
+      get_series_chart10(series10)
+      @series10 = series10.to_json
 
       # Figure 9: Performance data for each student versus time in program
       # Different series for above/below regression formula (Patrick's formula)
@@ -156,6 +155,76 @@ module MindleapsAnalytics
       get_series_chart8(series8)
       @count = series8.count
       @series8 = series8.to_json
+
+    end
+
+
+    def get_series_chart10(series)
+
+      # top query
+      if not @student.nil? and not @student == '' and not @student == 'All'
+        lessons = Lesson.includes(:grades).where(grades: {student_id: @student})
+      elsif not @group.nil? and not @group == '' and not @group == 'All'
+        lessons = Lesson.where(group_id: @group)
+      elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
+        lessons = Lesson.includes(:group).where(groups: {chapter_id: @chapter})
+      elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
+        lessons = Lesson.includes(group: :chapter).where(chapters: {organization_id: @organization})
+      else
+        lessons = Lesson.all
+      end
+
+      # Hash to contain the groups series, so one entry per group
+      series_hash = Hash.new
+
+      # Prediction based on the regression model
+      p_t1 = 0.05565
+      p_t2 = -0.00075043
+      p_t3 = 4.2898e-06
+      p_t4 = -8.4405e-09
+      p_age = 0.048271
+      # No intercept value given bij Patrick, so we use the average over all the group values here
+      # = Average(3,928; 3,7858; 4,012; 3,9965; 4,3559; 3,3744)
+      p_intercept = 3.909
+
+      # Calculate the average performance for this lesson and group
+      lessons.each do |lesson|
+        # Count the number of previous lessons for this group
+        nr_of_lessons = Lesson.where('group_id = :group_id AND date < :date_to',
+                                     {group_id: lesson.group_id, date_to: lesson.date}).distinct.count(:id)
+        # Determine the average group performance for this lesson
+        avg = Grade.where(lesson_id: lesson.id).joins(:grade_descriptor).average(:mark)
+
+        age = 13
+        
+        point = []
+        point << nr_of_lessons
+        point << avg.to_f
+
+        fitted = []
+        fitted << nr_of_lessons
+        # No intercept value given bij Patrick, so we use the average over all the group values here
+        # = Average(3,928; 3,7858; 4,012; 3,9965; 4,3559; 3,3744)
+        p_intercept = 3.909
+
+        # No intercept value given bij Patrick, so we use the average over all the group values here (=3.5)
+        fitted << p_intercept + p_t1 * nr_of_lessons + p_t2 * nr_of_lessons**2 + p_t3 * nr_of_lessons**3 + p_t4 * nr_of_lessons**4 + p_age * age
+
+        # add this point to the correct (meaning: this Group's) data series
+        if series_hash[lesson.group.group_name] == nil
+          series_hash[lesson.group.group_name] = []
+        end
+        if series_hash['fitted'] == nil
+          series_hash['fitted'] = []
+        end
+        series_hash[lesson.group.group_name] << point
+        series_hash['fitted'] << fitted
+      end
+
+      # Calculation is done, now convert the series_hash to something HighCharts understands
+      series_hash.each do |group, array|
+        series << {name: t(:group) + ' ' + group, data: array}
+      end
 
     end
 
@@ -261,20 +330,53 @@ module MindleapsAnalytics
         # Determine the average group performance for this lesson
         avg = Grade.where(lesson_id: lesson.id).joins(:grade_descriptor).average(:mark)
 
+        age = 13
+
         point = []
         point << nr_of_lessons
         point << avg.to_f
 
-        # add this point to the correct (meaning: this Group's) data series
+        # Prediction based on the regression model
+        fitted = []
+        fitted << nr_of_lessons
+        p_t1 = 0.05565
+        p_t2 = -0.00075043
+        p_t3 = 4.2898e-06
+        p_t4 = -8.4405e-09
+        p_age = 0.048271
+        # No intercept value given bij Patrick, so we use the average over all the group values here
+        # = Average(3,928; 3,7858; 4,012; 3,9965; 4,3559; 3,3744)
+        p_intercept = 3.909
+
+        # No intercept value given bij Patrick, so we use the average over all the group values here (=3.5)
+        fitted << p_intercept + p_t1 * nr_of_lessons + p_t2 * nr_of_lessons**2 + p_t3 * nr_of_lessons**3 + p_t4 * nr_of_lessons**4 + p_age * age
+
         if series_hash[lesson.group.group_name] == nil
-          series_hash[lesson.group.group_name] = []
+          series_hash[lesson.group.group_name] = Hash.new
         end
-        series_hash[lesson.group.group_name] << point
+
+        # add this point to the correct (meaning: this Group's) data series
+        if series_hash[lesson.group.group_name]['performance'] == nil
+          series_hash[lesson.group.group_name]['performance'] = []
+        end
+        if series_hash[lesson.group.group_name]['fitted'] == nil
+          series_hash[lesson.group.group_name]['fitted'] = []
+        end
+        series_hash[lesson.group.group_name]['performance'] << point
+        series_hash[lesson.group.group_name]['fitted'] << fitted
       end
 
       # Calculation is done, now convert the series_hash to something HighCharts understands
-      series_hash.each do |group, array|
-        series << {name: t(:group) + ' ' + group, data: array}
+      # series_hash.each do |group, array|
+      #   series << {name: t(:group) + ' ' + group, data: array}
+      # end
+
+      series_hash.each do |group, hash|
+        group_series = []
+        hash.each do |group, array|
+          group_series << {name: t(:group) + ' ' + group, data: array}
+        end
+        series << {group: t(:group) + ' ' + group, series: group_series}
       end
 
     end
@@ -412,7 +514,7 @@ module MindleapsAnalytics
           nr_of_lessons = Lesson.includes(:grades).where('date < :date_to', {date_to: lesson.date}).where(grades: {student_id: @student}).distinct.count(:id)
 
           # This student's age (for regression calculation)
-          dob = Student.find( @student ).dob
+          dob = Student.find(@student).dob
           now = lesson.date
           age = now.year - dob.year - ((now.month > dob.month || (now.month == dob.month && now.day >= dob.day)) ? 0 : 1)
           # age = 13
