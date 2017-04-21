@@ -412,9 +412,10 @@ module MindleapsAnalytics
           nr_of_lessons = Lesson.includes(:grades).where('date < :date_to', {date_to: lesson.date}).where(grades: {student_id: @student}).distinct.count(:id)
 
           # This student's age (for regression calculation)
-          dob = @student.dob
+          dob = Student.find( @student ).dob
           now = lesson.date
           age = now.year - dob.year - ((now.month > dob.month || (now.month == dob.month && now.day >= dob.day)) ? 0 : 1)
+          # age = 13
         else
           # Count the number of previous lessons for this group
           nr_of_lessons = Lesson.where('group_id = :group_id AND date < :date_to',
