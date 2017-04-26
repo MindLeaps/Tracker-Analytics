@@ -211,13 +211,15 @@ module MindleapsAnalytics
         fitted << p_intercept + p_t1 * nr_of_lessons + p_t2 * nr_of_lessons**2 + p_t3 * nr_of_lessons**3 + p_t4 * nr_of_lessons**4 + p_age * age
 
         # add this point to the correct (meaning: this Group's) data series
-        if series_hash[lesson.group.group_name] == nil
-          series_hash[lesson.group.group_name] = []
+        # Bug Tracker: TRACK-111 - Conflicts groups with same name from different chapters
+        hash_key = lesson.group.chapter.chapter_name + ' ' + lesson.group.group_name
+        if series_hash[hash_key] == nil
+          series_hash[hash_key] = []
         end
         if series_hash['fitted'] == nil
           series_hash['fitted'] = []
         end
-        series_hash[lesson.group.group_name] << point
+        series_hash[hash_key] << point
         series_hash['fitted'] << fitted
       end
 
@@ -351,19 +353,21 @@ module MindleapsAnalytics
         # No intercept value given bij Patrick, so we use the average over all the group values here (=3.5)
         fitted << p_intercept + p_t1 * nr_of_lessons + p_t2 * nr_of_lessons**2 + p_t3 * nr_of_lessons**3 + p_t4 * nr_of_lessons**4 + p_age * age
 
-        if series_hash[lesson.group.group_name] == nil
-          series_hash[lesson.group.group_name] = Hash.new
+        # Bug Tracker: TRACK-111 - Conflicts groups with same name from different chapters
+        hash_key = lesson.group.chapter.chapter_name + ' ' + lesson.group.group_name
+        if series_hash[hash_key] == nil
+          series_hash[hash_key] = Hash.new
         end
 
         # add this point to the correct (meaning: this Group's) data series
-        if series_hash[lesson.group.group_name]['performance'] == nil
-          series_hash[lesson.group.group_name]['performance'] = []
+        if series_hash[hash_key]['performance'] == nil
+          series_hash[hash_key]['performance'] = []
         end
-        if series_hash[lesson.group.group_name]['fitted'] == nil
-          series_hash[lesson.group.group_name]['fitted'] = []
+        if series_hash[hash_key]['fitted'] == nil
+          series_hash[hash_key]['fitted'] = []
         end
-        series_hash[lesson.group.group_name]['performance'] << point
-        series_hash[lesson.group.group_name]['fitted'] << fitted
+        series_hash[hash_key]['performance'] << point
+        series_hash[hash_key]['fitted'] << fitted
       end
 
       # Calculation is done, now convert the series_hash to something HighCharts understands
@@ -609,15 +613,17 @@ module MindleapsAnalytics
           end
 
           # add this point to the correct (meaning: this Group's) data series
-          if series_double_hash[skill.skill_name][lesson.group.group_name] == nil
-            series_double_hash[skill.skill_name][lesson.group.group_name] = []
+          # Bug Tracker: TRACK-111 - Conflicts groups with same name from different chapters
+          hash_key = lesson.group.chapter.chapter_name + ' ' + lesson.group.group_name
+          if series_double_hash[skill.skill_name][hash_key] == nil
+            series_double_hash[skill.skill_name][hash_key] = []
           end
-          if series_double_hash[skill.skill_name][lesson.group.group_name + ' fitted'] == nil
-            series_double_hash[skill.skill_name][lesson.group.group_name + ' fitted'] = []
+          if series_double_hash[skill.skill_name][hash_key + ' fitted'] == nil
+            series_double_hash[skill.skill_name][hash_key + ' fitted'] = []
           end
           # series_hash[lesson.group.group_name] << point
-          series_double_hash[skill.skill_name][lesson.group.group_name] << point
-          series_double_hash[skill.skill_name][lesson.group.group_name + ' fitted'] << fitted
+          series_double_hash[skill.skill_name][hash_key] << point
+          series_double_hash[skill.skill_name][hash_key + ' fitted'] << fitted
         end
       end
 
