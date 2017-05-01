@@ -17,7 +17,7 @@ module MindleapsAnalytics
         @chapters = Chapter.all
       end
 
-      if not @group.nil? and not @group == '' and not @group == 'All'
+      if not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
         @groups = Group.where(chapter_id: @chapter)
       elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
         @groups = Group.includes(:chapter).where(chapters: {organization_id: @organization})
@@ -67,7 +67,7 @@ module MindleapsAnalytics
       # Figure 9: Performance data for each student versus time in program
       # Different series for above/below regression formula (Patrick's formula)
       series9 = []
-      # get_series_chart9(series9)
+      get_series_chart9(series9)
       @series9 = series9.to_json
 
     end
@@ -248,14 +248,47 @@ module MindleapsAnalytics
       # top query
       if not @student.nil? and not @student == '' and not @student == 'All'
         lessons = Lesson.includes(:grades).where(grades: {student_id: @student})
+        student = Student.find(@student)
+        @groupname = '(' + t(:student) + ' ' + student.proper_name + ')'
       elsif not @group.nil? and not @group == '' and not @group == 'All'
+        group = Group.find(@group)
+        chapter = group.chapter
+        organization = chapter.organization
+        orgname = organization.organization_name
+        chapname = chapter.chapter_name
+        groupname = group.group_name
+        @groupname = '(' + t(:group) + ' ' + orgname + ' - ' + chapname + ' - ' + groupname + ')'
         lessons = Lesson.where(group_id: @group)
       elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
-        lessons = Lesson.includes(:group).where(groups: {chapter_id: @chapter})
+        chapter = Chapter.find(@chapter)
+        organization = chapter.organization
+        group = chapter.groups.first
+        orgname = organization.organization_name
+        chapname = chapter.chapter_name
+        groupname = group.group_name
+        @groupname = '(' + t(:group) + ' ' + orgname + ' - ' + chapname + ' - ' + groupname + ')'
+        lessons = Lesson.includes(:group).where(group_id: group.id)
+        # lessons = Lesson.includes(:group).where(groups: {chapter_id: @chapter})
       elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
-        lessons = Lesson.includes(group: :chapter).where(chapters: {organization_id: @organization})
+        organization = Organization.find(@organization)
+        chapter = organization.chapters.first
+        group = chapter.groups.first
+        orgname = organization.organization_name
+        chapname = chapter.chapter_name
+        groupname = group.group_name
+        @groupname = '(' + t(:group) + ' ' + orgname + ' - ' + chapname + ' - ' + groupname + ')'
+        lessons = Lesson.includes(:group).where(group_id: group.id)
+        # lessons = Lesson.includes(group: :chapter).where(chapters: {organization_id: @organization})
       else
-        lessons = Lesson.all
+        organization = Organization.first
+        chapter = organization.chapters.first
+        group = chapter.groups.first
+        orgname = organization.organization_name
+        chapname = chapter.chapter_name
+        groupname = group.group_name
+        @groupname = '(' + t(:group) + ' ' + orgname + ' - ' + chapname + ' - ' + groupname + ')'
+        lessons = Lesson.includes(:group).where(group_id: group.id)
+        # lessons = Lesson.all
       end
 
       performance_hash = {}
@@ -267,13 +300,17 @@ module MindleapsAnalytics
         if not @student.nil? and not @student == '' and not @student == 'All'
           students = Student.includes(:grades).where(grades: {lesson_id: lesson.id}, id: @student)
         else
-          students = Student.includes(:grades).where(grades: {lesson_id: lesson.id})
+          students = Student.includes(:grades).select('distinct students.*').where(grades: {lesson_id: lesson.id})
         end
 
         students.each do |student|
           avg = Grade.where(lesson_id: lesson.id, student_id: student.id).joins(:grade_descriptor).average(:mark)
           # The number of lessons where this student participated in
-          nr_of_lessons = Lesson.includes(:grades).where('date < :date_to', {date_to: lesson.date}, grade: {student_id: student.id}).count
+          # nr_of_lessons = Lesson.includes(:grades).where('date < :date_to',
+          #                                                {date_to: lesson.date}, grade: {student_id: student.id}).distinct.count(:id)
+          nr_of_lessons = Lesson.includes(:grades).where('date < :date_to',
+                                                         {date_to: lesson.date}).where(grades: {student_id: student.id}).distinct.count(:id)
+          # nr_of_lessons = Lesson.where('date < :date_to', {date_to: lesson.date}, group_id: student.group.id).distinct.count(:id)
 
           dob = student.dob
           now = lesson.date
@@ -382,7 +419,7 @@ module MindleapsAnalytics
         group_series = []
         regression = regression_hash[group]
 
-        regression.sort_by!{ |a| a[0]}
+        regression.sort_by! {|a| a[0]}
         group_series << {name: t(:group) + ' ' + group, data: array}
         group_series << {name: t(:regression_curve), data: regression, color: '#FF0000', lineWidth: 1, marker: {enabled: false}}
         series << {group: t(:group) + ' ' + group, series: group_series}
@@ -521,7 +558,8 @@ module MindleapsAnalytics
       age = 0
       lessons.each do |lesson|
         if not @student.nil? and not @student == '' and not @student == 'All'
-          nr_of_lessons = Lesson.includes(:grades).where('date < :date_to', {date_to: lesson.date}).where(grades: {student_id: @student}).distinct.count(:id)
+          nr_of_lessons = Lesson.includes(:grades).where('date < :date_to',
+                                                         {date_to: lesson.date}).where(grades: {student_id: @student}).distinct.count(:id)
 
           # This student's age (for regression calculation)
           dob = Student.find(@student).dob
