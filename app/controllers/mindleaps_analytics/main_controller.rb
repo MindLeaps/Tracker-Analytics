@@ -67,7 +67,7 @@ module MindleapsAnalytics
       # Figure 9: Performance data for each student versus time in program
       # Different series for above/below regression formula (Patrick's formula)
       series9 = []
-      get_series_chart9(series9)
+      # get_series_chart9(series9)
       @series9 = series9.to_json
 
     end
@@ -176,6 +176,7 @@ module MindleapsAnalytics
 
       # Hash to contain the groups series, so one entry per group
       series_hash = Hash.new
+      regression = []
 
       # Prediction based on the regression model
       p_t1 = 0.05565
@@ -190,13 +191,13 @@ module MindleapsAnalytics
       # Calculate the average performance for this lesson and group
       lessons.each do |lesson|
         # Count the number of previous lessons for this group
-        nr_of_lessons = Lesson.where('group_id = :group_id AND date < :date_to',
-                                     {group_id: lesson.group_id, date_to: lesson.date}).distinct.count(:id)
+        nr_of_lessons = Lesson.includes(:group).where('group_id = :group_id AND date < :date_to',
+                                                      {group_id: lesson.group_id, date_to: lesson.date}).distinct.count(:id)
         # Determine the average group performance for this lesson
-        avg = Grade.where(lesson_id: lesson.id).joins(:grade_descriptor).average(:mark)
+        avg = Grade.includes(:lesson).where(lesson_id: lesson.id).joins(:grade_descriptor).average(:mark)
 
         age = 13
-        
+
         point = []
         point << nr_of_lessons
         point << avg.to_f
@@ -216,17 +217,21 @@ module MindleapsAnalytics
         if series_hash[hash_key] == nil
           series_hash[hash_key] = []
         end
-        if series_hash['fitted'] == nil
-          series_hash['fitted'] = []
-        end
+        # if series_hash['fitted'] == nil
+        #   series_hash['fitted'] = []
+        # end
         series_hash[hash_key] << point
-        series_hash['fitted'] << fitted
+        # series_hash['fitted'] << fitted
+        regression << fitted
       end
 
       # Calculation is done, now convert the series_hash to something HighCharts understands
       series_hash.each do |group, array|
         series << {name: t(:group) + ' ' + group, data: array}
       end
+
+      regression.sort_by! {|array| array[0]}
+      series << {name: t(:regression_curve), data: regression, color: '#FF0000', lineWidth: 1, marker: {enabled: false}}
 
     end
 
@@ -323,6 +328,7 @@ module MindleapsAnalytics
 
       # Hash to contain the groups series, so one entry per group
       series_hash = Hash.new
+      regression_hash = Hash.new
 
       # Calculate the average performance for this lesson and group
       lessons.each do |lesson|
@@ -356,18 +362,15 @@ module MindleapsAnalytics
         # Bug Tracker: TRACK-111 - Conflicts groups with same name from different chapters
         hash_key = lesson.group.chapter.chapter_name + ' ' + lesson.group.group_name
         if series_hash[hash_key] == nil
-          series_hash[hash_key] = Hash.new
+          series_hash[hash_key] = []
+        end
+        if regression_hash[hash_key] == nil
+          regression_hash[hash_key] = []
         end
 
         # add this point to the correct (meaning: this Group's) data series
-        if series_hash[hash_key]['performance'] == nil
-          series_hash[hash_key]['performance'] = []
-        end
-        if series_hash[hash_key]['fitted'] == nil
-          series_hash[hash_key]['fitted'] = []
-        end
-        series_hash[hash_key]['performance'] << point
-        series_hash[hash_key]['fitted'] << fitted
+        series_hash[hash_key] << point
+        regression_hash[hash_key] << fitted
       end
 
       # Calculation is done, now convert the series_hash to something HighCharts understands
@@ -375,11 +378,13 @@ module MindleapsAnalytics
       #   series << {name: t(:group) + ' ' + group, data: array}
       # end
 
-      series_hash.each do |group, hash|
+      series_hash.each do |group, array|
         group_series = []
-        hash.each do |group, array|
-          group_series << {name: t(:group) + ' ' + group, data: array}
-        end
+        regression = regression_hash[group]
+
+        regression.sort_by!{ |a| a[0]}
+        group_series << {name: t(:group) + ' ' + group, data: array}
+        group_series << {name: t(:regression_curve), data: regression, color: '#FF0000', lineWidth: 1, marker: {enabled: false}}
         series << {group: t(:group) + ' ' + group, series: group_series}
       end
 
@@ -497,6 +502,7 @@ module MindleapsAnalytics
       skills = Skill.includes(:assignments).where(organization_id: @organization, assignments: {subject_id: @subject})
 
       series_double_hash = Hash.new
+      skill_hash = Hash.new
 
       # top query
       if not @student.nil? and not @student == '' and not @student == 'All'
@@ -559,9 +565,37 @@ module MindleapsAnalytics
           point << avg.to_f
 
           # Prediction based on the regression model
-          fitted = []
-          fitted << nr_of_lessons
-          case skill.skill_name
+          if skill_hash[skill.skill_name] == nil
+            skill_hash[skill.skill_name] = []
+          end
+          skill_hash[skill.skill_name] << nr_of_lessons
+
+          if series_double_hash[skill.skill_name] == nil
+            series_double_hash[skill.skill_name] = Hash.new
+          end
+
+          # add this point to the correct (meaning: this Group's) data series
+          # Bug Tracker: TRACK-111 - Conflicts groups with same name from different chapters
+          hash_key = lesson.group.chapter.chapter_name + ' ' + lesson.group.group_name
+          if series_double_hash[skill.skill_name][hash_key] == nil
+            series_double_hash[skill.skill_name][hash_key] = []
+          end
+
+          # series_hash[lesson.group.group_name] << point
+          series_double_hash[skill.skill_name][hash_key] << point
+
+        end
+      end
+
+      # Calculation is done, now convert the series_hash to something HighCharts understands
+      series_double_hash.each do |skill_name, hash|
+
+        regression = []
+        skill_hash[skill_name].each do |nr_of_lessons|
+
+          point = []
+          point << nr_of_lessons
+          case skill_name
             when 'Memorization'
               p_t1 = 0.059758
               p_t2 = -0.00076705
@@ -606,40 +640,18 @@ module MindleapsAnalytics
               p_age = 0.050222
           end
           # No intercept value given bij Patrick, so we use the average over all the group values here (=3.5)
-          fitted << 3.5 + p_t1 * nr_of_lessons + p_t2 * nr_of_lessons**2 + p_t3 * nr_of_lessons**3 + p_t4 * nr_of_lessons**4 + p_age * age
-
-          if series_double_hash[skill.skill_name] == nil
-            series_double_hash[skill.skill_name] = Hash.new
-          end
-
-          # add this point to the correct (meaning: this Group's) data series
-          # Bug Tracker: TRACK-111 - Conflicts groups with same name from different chapters
-          hash_key = lesson.group.chapter.chapter_name + ' ' + lesson.group.group_name
-          if series_double_hash[skill.skill_name][hash_key] == nil
-            series_double_hash[skill.skill_name][hash_key] = []
-          end
-          if series_double_hash[skill.skill_name][hash_key + ' fitted'] == nil
-            series_double_hash[skill.skill_name][hash_key + ' fitted'] = []
-          end
-          # series_hash[lesson.group.group_name] << point
-          series_double_hash[skill.skill_name][hash_key] << point
-          series_double_hash[skill.skill_name][hash_key + ' fitted'] << fitted
+          point << 3.5 + p_t1 * nr_of_lessons + p_t2 * nr_of_lessons**2 + p_t3 * nr_of_lessons**3 + p_t4 * nr_of_lessons**4 + p_age * age
+          regression << point
         end
-      end
 
-      # Calculation is done, now convert the series_hash to something HighCharts understands
-      # series_double_hash.each do |skill, hash|
-      #   series[skill] = []
-      #   hash.each do |group, array|
-      #     series[skill] << {name: t(:group) + ' ' + group, data: array}
-      #   end
-      # end
-      series_double_hash.each do |skill, hash|
         skill_series = []
         hash.each do |group, array|
           skill_series << {name: t(:group) + ' ' + group, data: array}
         end
-        series << {skill: skill, series: skill_series}
+
+        regression.sort_by! {|a| a[0]}
+        skill_series << {name: t(:regression_curve), data: regression, color: '#FF0000', lineWidth: 1, marker: {enabled: false}}
+        series << {skill: skill_name, series: skill_series}
       end
 
     end

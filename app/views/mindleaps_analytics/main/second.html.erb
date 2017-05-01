@@ -195,12 +195,11 @@
             datasets = <%= @series3.html_safe %>;
 
         $.each(datasets, function (i, dataset) {
-//            console.log(dataset);
             charts.push(new Highcharts.Chart({
 
                 chart: {
                     renderTo: $containers[i],
-                    type: 'line'
+                    type: 'scatter'
                 },
                 legend: {
                     enabled: true
@@ -223,6 +222,13 @@
                     allowDecimals: false,
                     title: {
                         text: '<%= t(:performance)%>'
+                    }
+                },
+                plotOptions: {
+                    series: {
+                        marker: {
+                            radius: 2
+                        }
                     }
                 },
                 series: dataset.series

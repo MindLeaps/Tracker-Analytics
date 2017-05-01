@@ -10,6 +10,7 @@ en:
   frequency_perc: Frequency %
   above_regression: Above average performance
   below_regression: Below average performance
+  regression_curve: Regression curve
 
   performance_vs_time: Performance vs. Time
   title_chart_2: Quantity of Data Collected By Month

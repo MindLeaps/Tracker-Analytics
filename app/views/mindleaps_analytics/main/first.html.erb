@@ -2,7 +2,7 @@
   <script src="http://code.highcharts.com/highcharts.js"></script>
 </head>
 <h1>Analytics</h1>
-<%#= @intercept %>
+<%= @series9 %>
 
 <%= form_tag do %>
     <table>
@@ -324,6 +324,13 @@
                     text: '<%= t(:performance)%>'
                 }
             },
+            plotOptions: {
+                series: {
+                    marker: {
+                        radius: 2
+                    }
+                }
+            },
             series: <%= @series10.html_safe %>
         });
 
@@ -359,6 +366,13 @@
             yAxis: {
                 title: {
                     text: '<%= t(:performance) %>'
+                }
+            },
+            plotOptions: {
+                series: {
+                    marker: {
+                        radius: 2
+                    }
                 }
             },
             series: <%= @series9.html_safe %>
