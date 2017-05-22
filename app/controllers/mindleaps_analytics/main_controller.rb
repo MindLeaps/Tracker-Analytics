@@ -238,12 +238,12 @@ module MindleapsAnalytics
     def get_series_chart9(series)
 
       # regression parameters
-      p_intercept = RegressionParameter.where(name: 'intercept').first.value
-      p_t1 = RegressionParameter.where(name: 't1').first.value
-      p_t2 = RegressionParameter.where(name: 't2').first.value
-      p_t3 = RegressionParameter.where(name: 't3').first.value
-      p_t4 = RegressionParameter.where(name: 't4').first.value
-      p_age = RegressionParameter.where(name: 'age').first.value
+      p_intercept = 3.31 # RegressionParameter.where(name: 'intercept').first.value
+      p_t1 = 0.0556501190994651 # RegressionParameter.where(name: 't1').first.value
+      p_t2 = -0.000750429285049042 # RegressionParameter.where(name: 't2').first.value
+      p_t3 = 4.28977790402216E-06 # RegressionParameter.where(name: 't3').first.value
+      p_t4 = -8.44049073102675E-09 # RegressionParameter.where(name: 't4').first.value
+      p_age = 0.0482714171873393 # RegressionParameter.where(name: 'age').first.value
 
       # top query
       if not @student.nil? and not @student == '' and not @student == 'All'
