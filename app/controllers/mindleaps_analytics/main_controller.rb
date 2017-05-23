@@ -535,9 +535,7 @@ module MindleapsAnalytics
     end
 
     def get_series_chart3(series)
-
-      skills = Skill.includes(:assignments).where(organization_id: @organization, assignments: {subject_id: @subject})
-
+      skills = Subject.includes(:skills).find(@subject).skills
       series_double_hash = Hash.new
       skill_hash = Hash.new
 
