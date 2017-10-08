@@ -440,7 +440,7 @@ module MindleapsAnalytics
       elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
         students = Student.includes(group: :chapter).where(chapters: {organization_id: @organization})
       else
-        students = Student.all
+        students = Student.where(group: @groups)
       end
 
       # Hash to contain the genders series, so one entry per gender
