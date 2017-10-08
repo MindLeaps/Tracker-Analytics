@@ -705,14 +705,13 @@ module MindleapsAnalytics
       elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
         students = Student.includes(group: :chapter).where(chapters: {organization_id: @organization})
       else
-        students = Student.all
+        students = Student.where(group_id: @groups.map(&:id))
       end
 
       # Hash to contain the average performance bins with their counts
       series_hash = Hash.new(0)
       students.each do |student|
         avg = Grade.where(student_id: student.id).joins(:grade_descriptor).average(:mark)
-
         if avg.nil?
           avg = 0
         else
@@ -731,7 +730,6 @@ module MindleapsAnalytics
         data << [ObjectSpace._id2ref(difference), (count * 100).to_f / students.count]
       end
       series << {name: t(:frequency_perc), data: data}
-
     end
 
     def get_series_chart2(categories, series)
