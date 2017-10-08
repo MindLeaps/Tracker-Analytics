@@ -81,11 +81,11 @@ module MindleapsAnalytics
       @subject = params[:subject_select]
       @student = params[:student_select]
 
-      @organizations = Organization.all
+      @organizations = policy_scope Organization
       if not @organization.nil? and not @organization == '' and not @organization == 'All'
         @chapters = Chapter.where(organization_id: @organization)
       else
-        @chapters = Chapter.all
+        @chapters = policy_scope Chapter
       end
 
       if not @group.nil? and not @group == '' and not @group == 'All'
@@ -93,7 +93,7 @@ module MindleapsAnalytics
       elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
         @groups = Group.includes(:chapter).where(chapters: {organization_id: @organization})
       else
-        @groups = Group.all
+        @groups = policy_scope Group
       end
 
       if not @group.nil? and not @group == '' and not @group == 'All'
@@ -109,14 +109,14 @@ module MindleapsAnalytics
       if not @organization.nil? and not @organization == '' and not @organization == 'All'
         @subjects = Subject.where(organization: @organization)
       else
-        @subjects = Subject.all
+        @subjects = policy_scope Subject
       end
 
       unless params[:organization_select]
-        @organization = Organization.first.id
+        @organization = @organizations.first.id
       end
       unless params[:subject_select]
-        @subject = Subject.first.id
+        @subject = @subjects.first.id
       end
 
       # figure 3: Histograms (Trellis) for the seven skills that are evaluated
@@ -550,7 +550,7 @@ module MindleapsAnalytics
       elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
         lessons = Lesson.includes(group: :chapter).where(chapters: {organization_id: @organization})
       else
-        lessons = Lesson.all
+        lessons = Lesson.where(group: @groups)
       end
 
       # Calculate the average performance for this lesson and group
