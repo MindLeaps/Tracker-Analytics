@@ -139,15 +139,15 @@ module MindleapsAnalytics
       @subject = params[:subject_select]
       @student = params[:student_select]
 
-      @organizations = Organization.all
+      @organizations = policy_scope Organization
       if not @organization.nil? and not @organization == '' and not @organization == 'All'
         @chapters = Chapter.where(organization_id: @organization)
       else
-        @chapters = Chapter.all
+        @chapters = Chapter.where(organization: @organizations)
       end
 
       unless params[:organization_select]
-        @organization = Organization.first.id
+        @organization = @organizations.first.id
       end
 
       # figure 8: Average performance per group by days in program
@@ -361,7 +361,7 @@ module MindleapsAnalytics
       elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
         lessons = Lesson.includes(group: :chapter).where(chapters: {organization_id: @organization})
       else
-        lessons = Lesson.all
+        lessons = policy_scope Lesson
       end
 
       # Hash to contain the groups series, so one entry per group
