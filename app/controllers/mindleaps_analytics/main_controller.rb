@@ -4,34 +4,35 @@ module MindleapsAnalytics
   class MainController < ApplicationController
     skip_after_action :verify_authorized
 
+    before_action do
+      @selected_organization_id = params[:organization_select]
+      @selected_chapter_id = params[:chapter_select]
+      @selected_group_id = params[:group_select]
+      @selected_student_id = params[:student_select]
+    end
+
     def first
-
-      @organization = params[:organization_select]
-      @chapter = params[:chapter_select]
-      @group = params[:group_select]
-      @student = params[:student_select]
-
       @organizations = policy_scope Organization
-      if not @organization.nil? and not @organization == '' and not @organization == 'All'
-        @chapters = Chapter.where(organization_id: @organization)
+      if not @selected_organization_id.nil? and not @selected_organization_id == '' and not @selected_organization_id == 'All'
+        @chapters = Chapter.where(organization_id: @selected_organization_id)
       else
         @chapters = policy_scope Chapter
       end
 
-      if not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
-        @groups = Group.where(chapter_id: @chapter)
-      elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
-        @groups = Group.includes(:chapter).where(chapters: {organization_id: @organization})
+      if not @selected_chapter_id.nil? and not @selected_chapter_id == '' and not @selected_chapter_id == 'All'
+        @groups = Group.where(chapter_id: @selected_chapter_id)
+      elsif not @selected_organization_id.nil? and not @selected_organization_id == '' and not @selected_organization_id == 'All'
+        @groups = Group.includes(:chapter).where(chapters: {organization_id: @selected_organization_id})
       else
         @groups = policy_scope Group
       end
 
-      if not @group.nil? and not @group == '' and not @group == 'All'
-        @students = Student.where(group_id: @group).order(:last_name, :first_name).all
-      elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
-        @students = Student.includes(:group).where(groups: {chapter_id: @chapter}).order(:last_name, :first_name).all
-      elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
-        @students = Student.includes(group: :chapter).where(chapters: {organization_id: @organization}).order(:last_name, :first_name).all
+      if not @selected_group_id.nil? and not @selected_group_id == '' and not @selected_group_id == 'All'
+        @students = Student.where(group_id: @selected_group_id).order(:last_name, :first_name).all
+      elsif not @selected_chapter_id.nil? and not @selected_chapter_id == '' and not @selected_chapter_id == 'All'
+        @students = Student.includes(:group).where(groups: {chapter_id: @selected_chapter_id}).order(:last_name, :first_name).all
+      elsif not @selected_organization_id.nil? and not @selected_organization_id == '' and not @selected_organization_id == 'All'
+        @students = Student.includes(group: :chapter).where(chapters: {organization_id: @selected_organization_id}).order(:last_name, :first_name).all
       else
         @students = policy_scope Student.order(:last_name, :first_name)
       end
@@ -75,45 +76,41 @@ module MindleapsAnalytics
 
     def second
 
-      @organization = params[:organization_select]
-      @chapter = params[:chapter_select]
-      @group = params[:group_select]
       @subject = params[:subject_select]
-      @student = params[:student_select]
 
       @organizations = policy_scope Organization
-      if not @organization.nil? and not @organization == '' and not @organization == 'All'
-        @chapters = Chapter.where(organization_id: @organization)
+      if not @selected_organization_id.nil? and not @selected_organization_id == '' and not @selected_organization_id == 'All'
+        @chapters = Chapter.where(organization_id: @selected_organization_id)
       else
         @chapters = policy_scope Chapter
       end
 
-      if not @group.nil? and not @group == '' and not @group == 'All'
-        @groups = Group.where(chapter_id: @chapter)
-      elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
-        @groups = Group.includes(:chapter).where(chapters: {organization_id: @organization})
+      if not @selected_group_id.nil? and not @selected_group_id == '' and not @selected_group_id == 'All'
+        @groups = Group.where(chapter_id: @selected_chapter_id)
+      elsif not @selected_organization_id.nil? and not @selected_organization_id == '' and not @selected_organization_id == 'All'
+        @groups = Group.includes(:chapter).where(chapters: {organization_id: @selected_organization_id})
       else
         @groups = policy_scope Group
       end
 
-      if not @group.nil? and not @group == '' and not @group == 'All'
-        @students = Student.where(group_id: @group).order(:last_name, :first_name).all
-      elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
-        @students = Student.includes(:group).where(groups: {chapter_id: @chapter}).order(:last_name, :first_name).all
-      elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
-        @students = Student.includes(group: :chapter).where(chapters: {organization_id: @organization}).order(:last_name, :first_name).all
+      if not @selected_group_id.nil? and not @selected_group_id == '' and not @selected_group_id == 'All'
+        @students = Student.where(group_id: @selected_group_id).order(:last_name, :first_name).all
+      elsif not @selected_chapter_id.nil? and not @selected_chapter_id == '' and not @selected_chapter_id == 'All'
+        @students = Student.includes(:group).where(groups: {chapter_id: @selected_chapter_id}).order(:last_name, :first_name).all
+      elsif not @selected_organization_id.nil? and not @selected_organization_id == '' and not @selected_organization_id == 'All'
+        @students = Student.includes(group: :chapter).where(chapters: {organization_id: @selected_organization_id}).order(:last_name, :first_name).all
       else
         @students = Student.order(:last_name, :first_name).all
       end
 
-      if not @organization.nil? and not @organization == '' and not @organization == 'All'
-        @subjects = Subject.where(organization: @organization)
+      if not @selected_organization_id.nil? and not @selected_organization_id == '' and not @selected_organization_id == 'All'
+        @subjects = Subject.where(organization: @selected_organization_id)
       else
         @subjects = policy_scope Subject
       end
 
       unless params[:organization_select]
-        @organization = @organizations.first.id
+        @selected_organization_id = @organizations.first.id
       end
       unless params[:subject_select]
         @subject = @subjects.first.id
@@ -132,22 +129,17 @@ module MindleapsAnalytics
     end
 
     def third
-
-      @organization = params[:organization_select]
-      @chapter = params[:chapter_select]
-      @group = params[:group_select]
       @subject = params[:subject_select]
-      @student = params[:student_select]
 
       @organizations = policy_scope Organization
-      if not @organization.nil? and not @organization == '' and not @organization == 'All'
-        @chapters = Chapter.where(organization_id: @organization)
+      if not @selected_organization_id.nil? and not @selected_organization_id == '' and not @selected_organization_id == 'All'
+        @chapters = Chapter.where(organization_id: @selected_organization_id)
       else
         @chapters = Chapter.where(organization: @organizations)
       end
 
       unless params[:organization_select]
-        @organization = @organizations.first.id
+        @selected_organization_id = @organizations.first.id
       end
 
       # figure 8: Average performance per group by days in program
@@ -163,14 +155,14 @@ module MindleapsAnalytics
     def get_series_chart10(series)
 
       # top query
-      if not @student.nil? and not @student == '' and not @student == 'All'
-        lessons = Lesson.includes(:grades).where(grades: {student_id: @student})
-      elsif not @group.nil? and not @group == '' and not @group == 'All'
-        lessons = Lesson.where(group_id: @group)
-      elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
-        lessons = Lesson.includes(:group).where(groups: {chapter_id: @chapter})
-      elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
-        lessons = Lesson.includes(group: :chapter).where(chapters: {organization_id: @organization})
+      if not @selected_student_id.nil? and not @selected_student_id == '' and not @selected_student_id == 'All'
+        lessons = Lesson.includes(:grades).where(grades: {student_id: @selected_student_id})
+      elsif not @selected_group_id.nil? and not @selected_group_id == '' and not @selected_group_id == 'All'
+        lessons = Lesson.where(group_id: @selected_group_id)
+      elsif not @selected_chapter_id.nil? and not @selected_chapter_id == '' and not @selected_chapter_id == 'All'
+        lessons = Lesson.includes(:group).where(groups: {chapter_id: @selected_chapter_id})
+      elsif not @selected_organization_id.nil? and not @selected_organization_id == '' and not @selected_organization_id == 'All'
+        lessons = Lesson.includes(group: :chapter).where(chapters: {organization_id: @selected_organization_id})
       else
         lessons = Lesson.where(group: @groups)
       end
@@ -247,21 +239,21 @@ module MindleapsAnalytics
       p_age = 0.0482714171873393 # RegressionParameter.where(name: 'age').first.value
 
       # top query
-      if not @student.nil? and not @student == '' and not @student == 'All'
-        lessons = Lesson.includes(:grades).where(grades: {student_id: @student})
-        student = Student.find(@student)
+      if not @selected_student_id.nil? and not @selected_student_id == '' and not @selected_student_id == 'All'
+        lessons = Lesson.includes(:grades).where(grades: {student_id: @selected_student_id})
+        student = Student.find(@selected_student_id)
         @groupname = '(' + t(:student) + ' ' + student.proper_name + ')'
-      elsif not @group.nil? and not @group == '' and not @group == 'All'
-        group = Group.find(@group)
+      elsif not @selected_group_id.nil? and not @selected_group_id == '' and not @selected_group_id == 'All'
+        group = Group.find(@selected_group_id)
         chapter = group.chapter
         organization = chapter.organization
         orgname = organization.organization_name
         chapname = chapter.chapter_name
         groupname = group.group_name
         @groupname = '(' + t(:group) + ' ' + orgname + ' - ' + chapname + ' - ' + groupname + ')'
-        lessons = Lesson.where(group_id: @group)
-      elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
-        chapter = Chapter.find(@chapter)
+        lessons = Lesson.where(group_id: @selected_group_id)
+      elsif not @selected_chapter_id.nil? and not @selected_chapter_id == '' and not @selected_chapter_id == 'All'
+        chapter = Chapter.find(@selected_chapter_id)
         organization = chapter.organization
         group = chapter.groups.first
         orgname = organization.organization_name
@@ -269,9 +261,9 @@ module MindleapsAnalytics
         groupname = group.group_name
         @groupname = '(' + t(:group) + ' ' + orgname + ' - ' + chapname + ' - ' + groupname + ')'
         lessons = Lesson.includes(:group).where(group_id: group.id)
-        # lessons = Lesson.includes(:group).where(groups: {chapter_id: @chapter})
-      elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
-        organization = Organization.find(@organization)
+        # lessons = Lesson.includes(:group).where(groups: {chapter_id: @selected_chapter_id})
+      elsif not @selected_organization_id.nil? and not @selected_organization_id == '' and not @selected_organization_id == 'All'
+        organization = Organization.find(@selected_organization_id)
         chapter = organization.chapters.first
         group = chapter.groups.first
         orgname = organization.organization_name
@@ -279,7 +271,7 @@ module MindleapsAnalytics
         groupname = group.group_name
         @groupname = '(' + t(:group) + ' ' + orgname + ' - ' + chapname + ' - ' + groupname + ')'
         lessons = Lesson.includes(:group).where(group_id: group.id)
-        # lessons = Lesson.includes(group: :chapter).where(chapters: {organization_id: @organization})
+        # lessons = Lesson.includes(group: :chapter).where(chapters: {organization_id: @selected_organization_id})
       else
         organization = @organizations.first
         chapter = organization.chapters.first
@@ -298,8 +290,8 @@ module MindleapsAnalytics
 
       lessons.each do |lesson|
         # Find the students who attended this lesson
-        if not @student.nil? and not @student == '' and not @student == 'All'
-          students = Student.includes(:grades).where(grades: {lesson_id: lesson.id}, id: @student)
+        if not @selected_student_id.nil? and not @selected_student_id == '' and not @selected_student_id == 'All'
+          students = Student.includes(:grades).where(grades: {lesson_id: lesson.id}, id: @selected_student_id)
         else
           students = Student.includes(:grades).select('distinct students.*').where(grades: {lesson_id: lesson.id})
         end
@@ -352,14 +344,14 @@ module MindleapsAnalytics
     def get_series_chart8(series)
 
       # top query
-      if not @student.nil? and not @student == '' and not @student == 'All'
-        lessons = Lesson.includes(:grades).where(grades: {student_id: @student})
-      elsif not @group.nil? and not @group == '' and not @group == 'All'
-        lessons = Lesson.where(group_id: @group)
-      elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
-        lessons = Lesson.includes(:group).where(groups: {chapter_id: @chapter})
-      elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
-        lessons = Lesson.includes(group: :chapter).where(chapters: {organization_id: @organization})
+      if not @selected_student_id.nil? and not @selected_student_id == '' and not @selected_student_id == 'All'
+        lessons = Lesson.includes(:grades).where(grades: {student_id: @selected_student_id})
+      elsif not @selected_group_id.nil? and not @selected_group_id == '' and not @selected_group_id == 'All'
+        lessons = Lesson.where(group_id: @selected_group_id)
+      elsif not @selected_chapter_id.nil? and not @selected_chapter_id == '' and not @selected_chapter_id == 'All'
+        lessons = Lesson.includes(:group).where(groups: {chapter_id: @selected_chapter_id})
+      elsif not @selected_organization_id.nil? and not @selected_organization_id == '' and not @selected_organization_id == 'All'
+        lessons = Lesson.includes(group: :chapter).where(chapters: {organization_id: @selected_organization_id})
       else
         lessons = policy_scope Lesson
       end
@@ -431,14 +423,14 @@ module MindleapsAnalytics
     def get_series_chart6(series)
 
       # top query
-      if not @student.nil? and not @student == '' and not @student == 'All'
-        students = Student.where(id: @student)
-      elsif not @group.nil? and not @group == '' and not @group == 'All'
-        students = Student.where(group_id: @group)
-      elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
-        students = Student.includes(:group).where(groups: {chapter_id: @chapter})
-      elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
-        students = Student.includes(group: :chapter).where(chapters: {organization_id: @organization})
+      if not @selected_student_id.nil? and not @selected_student_id == '' and not @selected_student_id == 'All'
+        students = Student.where(id: @selected_student_id)
+      elsif not @selected_group_id.nil? and not @selected_group_id == '' and not @selected_group_id == 'All'
+        students = Student.where(group_id: @selected_group_id)
+      elsif not @selected_chapter_id.nil? and not @selected_chapter_id == '' and not @selected_chapter_id == 'All'
+        students = Student.includes(:group).where(groups: {chapter_id: @selected_chapter_id})
+      elsif not @selected_organization_id.nil? and not @selected_organization_id == '' and not @selected_organization_id == 'All'
+        students = Student.includes(group: :chapter).where(chapters: {organization_id: @selected_organization_id})
       else
         students = Student.where(group: @groups)
       end
@@ -491,14 +483,14 @@ module MindleapsAnalytics
     def get_series_chart5(series)
 
       # top query
-      if not @student.nil? and not @student == '' and not @student == 'All'
-        students = Student.where(id: @student)
-      elsif not @group.nil? and not @group == '' and not @group == 'All'
-        students = Student.where(group_id: @group)
-      elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
-        students = Student.includes(:group).where(groups: {chapter_id: @chapter})
-      elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
-        students = Student.includes(group: :chapter).where(chapters: {organization_id: @organization})
+      if not @selected_student_id.nil? and not @selected_student_id == '' and not @selected_student_id == 'All'
+        students = Student.where(id: @selected_student_id)
+      elsif not @selected_group_id.nil? and not @selected_group_id == '' and not @selected_group_id == 'All'
+        students = Student.where(group_id: @selected_group_id)
+      elsif not @selected_chapter_id.nil? and not @selected_chapter_id == '' and not @selected_chapter_id == 'All'
+        students = Student.includes(:group).where(groups: {chapter_id: @selected_chapter_id})
+      elsif not @selected_organization_id.nil? and not @selected_organization_id == '' and not @selected_organization_id == 'All'
+        students = Student.includes(group: :chapter).where(chapters: {organization_id: @selected_organization_id})
       else
         students = Student.where(group: @groups)
       end
@@ -541,14 +533,14 @@ module MindleapsAnalytics
       skill_hash = Hash.new
 
       # top query
-      if not @student.nil? and not @student == '' and not @student == 'All'
-        lessons = Lesson.includes(:grades).where(grades: {student_id: @student})
-      elsif not @group.nil? and not @group == '' and not @group == 'All'
-        lessons = Lesson.where(group_id: @group)
-      elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
-        lessons = Lesson.includes(:group).where(groups: {chapter_id: @chapter})
-      elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
-        lessons = Lesson.includes(group: :chapter).where(chapters: {organization_id: @organization})
+      if not @selected_student_id.nil? and not @selected_student_id == '' and not @selected_student_id == 'All'
+        lessons = Lesson.includes(:grades).where(grades: {student_id: @selected_student_id})
+      elsif not @selected_group_id.nil? and not @selected_group_id == '' and not @selected_group_id == 'All'
+        lessons = Lesson.where(group_id: @selected_group_id)
+      elsif not @selected_chapter_id.nil? and not @selected_chapter_id == '' and not @selected_chapter_id == 'All'
+        lessons = Lesson.includes(:group).where(groups: {chapter_id: @selected_chapter_id})
+      elsif not @selected_organization_id.nil? and not @selected_organization_id == '' and not @selected_organization_id == 'All'
+        lessons = Lesson.includes(group: :chapter).where(chapters: {organization_id: @selected_organization_id})
       else
         lessons = Lesson.where(group: @groups)
       end
@@ -556,12 +548,12 @@ module MindleapsAnalytics
       # Calculate the average performance for this lesson and group
       age = 0
       lessons.each do |lesson|
-        if not @student.nil? and not @student == '' and not @student == 'All'
+        if not @selected_student_id.nil? and not @selected_student_id == '' and not @selected_student_id == 'All'
           nr_of_lessons = Lesson.includes(:grades).where('date < :date_to',
-                                                         {date_to: lesson.date}).where(grades: {student_id: @student}).distinct.count(:id)
+                                                         {date_to: lesson.date}).where(grades: {student_id: @selected_student_id}).distinct.count(:id)
 
           # This student's age (for regression calculation)
-          dob = Student.find(@student).dob
+          dob = Student.find(@selected_student_id).dob
           now = lesson.date
           age = now.year - dob.year - ((now.month > dob.month || (now.month == dob.month && now.day >= dob.day)) ? 0 : 1)
           # age = 13
@@ -589,8 +581,8 @@ module MindleapsAnalytics
         end
 
         skills.each do |skill|
-          if not @student.nil? and not @student == '' and not @student == 'All'
-            avg = Grade.includes(:grade_descriptor).where(lesson_id: lesson.id, student_id: @student, grade_descriptors: {skill_id: skill.id}).joins(:grade_descriptor).average(:mark)
+          if not @selected_student_id.nil? and not @selected_student_id == '' and not @selected_student_id == 'All'
+            avg = Grade.includes(:grade_descriptor).where(lesson_id: lesson.id, student_id: @selected_student_id, grade_descriptors: {skill_id: skill.id}).joins(:grade_descriptor).average(:mark)
           else
             # Determine the average group performance for this lesson
             avg = Grade.includes(:grade_descriptor).where(lesson_id: lesson.id, grade_descriptors: {skill_id: skill.id}).joins(:grade_descriptor).average(:mark)
@@ -696,14 +688,14 @@ module MindleapsAnalytics
     def get_series_chart4(series)
 
       # top query
-      if not @student.nil? and not @student == '' and not @student == 'All'
-        students = Student.where(id: @student)
-      elsif not @group.nil? and not @group == '' and not @group == 'All'
-        students = Student.where(group_id: @group)
-      elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
-        students = Student.includes(:group).where(groups: {chapter_id: @chapter})
-      elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
-        students = Student.includes(group: :chapter).where(chapters: {organization_id: @organization})
+      if not @selected_student_id.nil? and not @selected_student_id == '' and not @selected_student_id == 'All'
+        students = Student.where(id: @selected_student_id)
+      elsif not @selected_group_id.nil? and not @selected_group_id == '' and not @selected_group_id == 'All'
+        students = Student.where(group_id: @selected_group_id)
+      elsif not @selected_chapter_id.nil? and not @selected_chapter_id == '' and not @selected_chapter_id == 'All'
+        students = Student.includes(:group).where(groups: {chapter_id: @selected_chapter_id})
+      elsif not @selected_organization_id.nil? and not @selected_organization_id == '' and not @selected_organization_id == 'All'
+        students = Student.includes(group: :chapter).where(chapters: {organization_id: @selected_organization_id})
       else
         students = Student.where(group_id: @groups.map(&:id))
       end
@@ -734,15 +726,15 @@ module MindleapsAnalytics
 
     def get_series_chart2(categories, series)
       # top query
-      if not @student.nil? and not @student == '' and not @student == 'All'
-        #dates = Grade.joins(:lesson).where(student_id: @student).group(:date).count.keys
-        dates = Lesson.includes(:grades).where(grades: {student_id: @student}).group(:date).count.keys
-      elsif not @group.nil? and not @group == '' and not @group == 'All'
-        dates = Lesson.where(group_id: @group).group(:date).count.keys
-      elsif not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
-        dates = Lesson.includes(:group).where(groups: {chapter_id: @chapter}).group(:date).count.keys
-      elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
-        dates = Lesson.includes(group: :chapter).where(chapters: {organization_id: @organization}).group(:date).count.keys
+      if not @selected_student_id.nil? and not @selected_student_id == '' and not @selected_student_id == 'All'
+        #dates = Grade.joins(:lesson).where(student_id: @selected_student_id).group(:date).count.keys
+        dates = Lesson.includes(:grades).where(grades: {student_id: @selected_student_id}).group(:date).count.keys
+      elsif not @selected_group_id.nil? and not @selected_group_id == '' and not @selected_group_id == 'All'
+        dates = Lesson.where(group_id: @selected_group_id).group(:date).count.keys
+      elsif not @selected_chapter_id.nil? and not @selected_chapter_id == '' and not @selected_chapter_id == 'All'
+        dates = Lesson.includes(:group).where(groups: {chapter_id: @selected_chapter_id}).group(:date).count.keys
+      elsif not @selected_organization_id.nil? and not @selected_organization_id == '' and not @selected_organization_id == 'All'
+        dates = Lesson.includes(group: :chapter).where(chapters: {organization_id: @selected_organization_id}).group(:date).count.keys
       else
         dates = Lesson.where(group: @groups).group(:date).count.keys
       end
@@ -765,8 +757,8 @@ module MindleapsAnalytics
         lessons = Lesson.where('date >= :date_from AND date <= :date_to AND group_id IN (:group_ids)', {date_from: from, date_to: to, group_ids: @groups.map(&:id)})
         nr_of_assessments = 0
         lessons.each do |lesson|
-          if not @student.nil? and not @student == '' and not @student == 'All'
-            nr_of_assessments += Grade.where(lesson_id: lesson.id, student: @student).distinct.count(:student_id)
+          if not @selected_student_id.nil? and not @selected_student_id == '' and not @selected_student_id == 'All'
+            nr_of_assessments += Grade.where(lesson_id: lesson.id, student: @selected_student_id).distinct.count(:student_id)
           else
             nr_of_assessments += Grade.where(lesson_id: lesson.id).distinct.count(:student_id)
           end
