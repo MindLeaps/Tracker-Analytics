@@ -2,6 +2,7 @@ require_dependency "mindleaps_analytics/application_controller"
 
 module MindleapsAnalytics
   class MainController < ApplicationController
+    skip_after_action :verify_authorized
 
     def first
 
@@ -10,11 +11,11 @@ module MindleapsAnalytics
       @group = params[:group_select]
       @student = params[:student_select]
 
-      @organizations = Organization.all
+      @organizations = policy_scope Organization
       if not @organization.nil? and not @organization == '' and not @organization == 'All'
         @chapters = Chapter.where(organization_id: @organization)
       else
-        @chapters = Chapter.all
+        @chapters = policy_scope Chapter
       end
 
       if not @chapter.nil? and not @chapter == '' and not @chapter == 'All'
@@ -22,7 +23,7 @@ module MindleapsAnalytics
       elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
         @groups = Group.includes(:chapter).where(chapters: {organization_id: @organization})
       else
-        @groups = Group.all
+        @groups = policy_scope Group
       end
 
       if not @group.nil? and not @group == '' and not @group == 'All'
@@ -32,7 +33,7 @@ module MindleapsAnalytics
       elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
         @students = Student.includes(group: :chapter).where(chapters: {organization_id: @organization}).order(:last_name, :first_name).all
       else
-        @students = Student.order(:last_name, :first_name).all
+        @students = policy_scope Student.order(:last_name, :first_name)
       end
 
       # figure 2: # Assessments per month
@@ -734,7 +735,6 @@ module MindleapsAnalytics
     end
 
     def get_series_chart2(categories, series)
-
       # top query
       if not @student.nil? and not @student == '' and not @student == 'All'
         #dates = Grade.joins(:lesson).where(student_id: @student).group(:date).count.keys
@@ -746,7 +746,7 @@ module MindleapsAnalytics
       elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
         dates = Lesson.includes(group: :chapter).where(chapters: {organization_id: @organization}).group(:date).count.keys
       else
-        dates = Lesson.group(:date).count.keys
+        dates = Lesson.where(group: @groups).group(:date).count.keys
       end
 
       months_raw = {}
@@ -764,7 +764,7 @@ module MindleapsAnalytics
       months_sorted.each do |key, values|
         from = Date.new(values[0], values[1], 1)
         to = Date.new(values[0], values[1], 1).at_end_of_month
-        lessons = Lesson.where('date >= :date_from AND date <= :date_to', {date_from: from, date_to: to})
+        lessons = Lesson.where('date >= :date_from AND date <= :date_to AND group_id IN (:group_ids)', {date_from: from, date_to: to, group_ids: @groups.map(&:id)})
         nr_of_assessments = 0
         lessons.each do |lesson|
           if not @student.nil? and not @student == '' and not @student == 'All'
