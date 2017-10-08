@@ -172,7 +172,7 @@ module MindleapsAnalytics
       elsif not @organization.nil? and not @organization == '' and not @organization == 'All'
         lessons = Lesson.includes(group: :chapter).where(chapters: {organization_id: @organization})
       else
-        lessons = Lesson.all
+        lessons = Lesson.where(group: @groups)
       end
 
       # Hash to contain the groups series, so one entry per group
