@@ -281,7 +281,7 @@ module MindleapsAnalytics
         lessons = Lesson.includes(:group).where(group_id: group.id)
         # lessons = Lesson.includes(group: :chapter).where(chapters: {organization_id: @organization})
       else
-        organization = Organization.first
+        organization = @organizations.first
         chapter = organization.chapters.first
         group = chapter.groups.first
         orgname = organization.organization_name
