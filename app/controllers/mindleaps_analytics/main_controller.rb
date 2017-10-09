@@ -50,9 +50,8 @@ module MindleapsAnalytics
 
       # figure 4: Histogram of student performance values
       # count average performance per student
-      series4 = []
-      get_series_chart4(series4)
-      @series4 = series4.to_json
+
+      @series4 = get_series_chart4.to_json
 
       # figure 5: Histogram of student performance change
       series5 = []
@@ -688,43 +687,22 @@ module MindleapsAnalytics
 
     end
 
-    def get_series_chart4(series)
+    def get_series_chart4
+      conn = ActiveRecord::Base.connection.raw_connection
+      res = conn.exec("select COALESCE(rounded, 0)::INT as mark, count(*) * 100 / (sum(count(*)) over ())::FLOAT as percentage
+                          from (select s.id, round(avg(mark)) as rounded
+                                from students as s
+                                  left join grades as g
+                                    on s.id = g.student_id
+                                  left join grade_descriptors as gd
+                                    on gd.id = g.grade_descriptor_id
+                                WHERE s.id IN (#{@selected_students.pluck(:id).join(', ')})
+                                GROUP BY s.id
+                          ) as student_round_mark
+                        GROUP BY mark
+                        ORDER BY mark;").values
 
-      # top query
-      if not @selected_student_id.nil? and not @selected_student_id == '' and not @selected_student_id == 'All'
-        students = Student.where(id: @selected_student_id)
-      elsif not @selected_group_id.nil? and not @selected_group_id == '' and not @selected_group_id == 'All'
-        students = Student.where(group_id: @selected_group_id)
-      elsif not @selected_chapter_id.nil? and not @selected_chapter_id == '' and not @selected_chapter_id == 'All'
-        students = Student.includes(:group).where(groups: {chapter_id: @selected_chapter_id})
-      elsif not @selected_organization_id.nil? and not @selected_organization_id == '' and not @selected_organization_id == 'All'
-        students = Student.includes(group: :chapter).where(chapters: {organization_id: @selected_organization_id})
-      else
-        students = Student.where(group_id: @groups.map(&:id))
-      end
-
-      # Hash to contain the average performance bins with their counts
-      series_hash = Hash.new(0)
-      students.each do |student|
-        avg = Grade.where(student_id: student.id).joins(:grade_descriptor).average(:mark)
-        if avg.nil?
-          avg = 0
-        else
-          avg = avg.round
-        end
-        series_hash[avg.object_id] += 1
-      end
-
-      # Array to contain the x and y values
-      # x-axis = difference bin, y value = frequency
-      data = []
-
-      # Loop over the average performance bins
-      # Map the hash keys back to x-axis bins and transform the y-axis counts to frequencies
-      series_hash.each do |difference, count|
-        data << [ObjectSpace._id2ref(difference), (count * 100).to_f / students.count]
-      end
-      series << {name: t(:frequency_perc), data: data}
+      [{name: t(:frequency_perc), data: res}]
     end
 
     def get_series_chart2
@@ -743,7 +721,7 @@ module MindleapsAnalytics
 
       {
         categories: res.map { |e| e[0] },
-        series: [{name: t(:nr_of_assessments), data: res.map { |e| e[1] }}]
+        series: [{ name: t(:nr_of_assessments), data: res.map { |e| e[1] } }]
       }
     end
 
@@ -752,7 +730,7 @@ module MindleapsAnalytics
     def find_resource_by_id_param(id, resource_class)
       return policy_scope resource_class if id.nil? || id == '' || id == 'All'
       return yield resource_class if block_given?
-      resource_class.find id
+      resource_class.where(id: id)
     end
   end
 end
