@@ -420,10 +420,20 @@ module MindleapsAnalytics
 
     def get_series_chart6
       conn = ActiveRecord::Base.connection.raw_connection
-      res_male = conn.exec(performance_change_query(@selected_students.where(gender: 'M'))).values
-      res_female = conn.exec(performance_change_query(@selected_students.where(gender: 'F'))).values
+      male_students = @selected_students.where(gender: 'M')
+      female_students = @selected_students.where(gender: 'F')
 
-      [{name: "#{t(:gender)} M", data: res_male}, {name: "#{t(:gender)} F", data: res_female}]
+      result= []
+
+      if male_students.length.positive?
+        result << { name: "#{t(:gender)} M", data: conn.exec(performance_change_query(male_students)).values }
+      end
+
+      if female_students.length.positive?
+        result << { name: "#{t(:gender)} F", data: conn.exec(performance_change_query(female_students)).values }
+      end
+
+      result
     end
 
     def get_series_chart5
