@@ -54,9 +54,7 @@ module MindleapsAnalytics
       @series4 = get_series_chart4.to_json
 
       # figure 5: Histogram of student performance change
-      series5 = []
-      get_series_chart5(series5)
-      @series5 = series5.to_json
+      @series5 = get_series_chart5.to_json
 
       # figure 6: Histogram of student performance change by boys and girls
       series6 = []
@@ -482,51 +480,43 @@ module MindleapsAnalytics
 
     end
 
-    def get_series_chart5(series)
+    def get_series_chart5
+      conn = ActiveRecord::Base.connection.raw_connection
 
-      # top query
-      if not @selected_student_id.nil? and not @selected_student_id == '' and not @selected_student_id == 'All'
-        students = Student.where(id: @selected_student_id)
-      elsif not @selected_group_id.nil? and not @selected_group_id == '' and not @selected_group_id == 'All'
-        students = Student.where(group_id: @selected_group_id)
-      elsif not @selected_chapter_id.nil? and not @selected_chapter_id == '' and not @selected_chapter_id == 'All'
-        students = Student.includes(:group).where(groups: {chapter_id: @selected_chapter_id})
-      elsif not @selected_organization_id.nil? and not @selected_organization_id == '' and not @selected_organization_id == 'All'
-        students = Student.includes(group: :chapter).where(chapters: {organization_id: @selected_organization_id})
-      else
-        students = Student.where(group: @groups)
-      end
+      res = conn.exec("with w1 AS (
+                          SELECT
+                            s.id as student_id,
+                            l.id as lesson_id,
+                            date,
+                            avg(mark)
+                          FROM students AS s
+                            LEFt JOIN grades AS g
+                              ON s.id = g.student_id
+                            LEFT JOIN lessons AS l
+                              ON l.id = g.lesson_id
+                            LEFT JOIN grade_descriptors AS gd
+                              ON gd.id = g.grade_descriptor_id
+                          WHERE s.id IN (#{@selected_students.pluck(:id).join(', ')})
+                          GROUP BY s.id, l.id
+                      ),
+                      min_table AS (
+                          SELECT * from w1 s1 WHERE (student_id, date) IN (
+                          SELECT student_id, MIN(date) FROM w1
+                                                       GROUP BY student_id
+                          ) OR date is null
+                      ),
+                      max_table AS (
+                        SELECT * from w1 s1 WHERE (student_id, date) IN (
+                          SELECT student_id, MAX(date) FROM w1
+                          GROUP BY student_id
+                        ) OR date is null
+                      )
+                      SELECT COALESCE(floor(((max_table.avg - min_table.avg) * 2) + 0.5) / 2, 0)::FLOAT as diff, count(*) * 100 / (SUM(count(*)) over ())::FLOAT FROM max_table
+                        JOIN min_table
+                        ON max_table.student_id = min_table.student_id
+                      GROUP BY diff;").values
 
-      # Hash to contain the difference bins with their counts
-      series_hash = Hash.new(0)
-
-      # Calculate the performance difference per student
-      students.each do |student|
-        min_date = Grade.where(student_id: student.id).joins(:lesson).minimum(:date)
-        max_date = Grade.where(student_id: student.id).joins(:lesson).maximum(:date)
-        min_avg = Grade.includes(:lesson).where(grades: {student_id: student.id}, lessons: {date: min_date}).joins(:grade_descriptor).average(:mark)
-        max_avg = Grade.includes(:lesson).where(grades: {student_id: student.id}, lessons: {date: max_date}).joins(:grade_descriptor).average(:mark)
-
-
-        min_avg = 0 if min_avg.nil?
-        max_avg = 0 if max_avg.nil?
-
-        # Bin the x-axis on 0.5's
-        difference = (((max_avg - min_avg) * 2) + 0.5).floor.to_f / 2
-        series_hash[difference.object_id] += 1
-      end
-
-      # Array to contain the x and y values
-      # x-axis = difference bin, y value = frequency
-      data = []
-
-      # Loop over the Difference bins: Expected 10 - 20 entries
-      # Map the hash keys back to x-axis bins and transform the y-axis counts to frequencies
-      series_hash.each do |difference, count|
-        data << [ObjectSpace._id2ref(difference), (count * 100).to_f / students.count]
-      end
-      series << {name: t(:frequency_perc), data: data}
-
+      [{name: t(:frequency_perc), data: res}]
     end
 
     def get_series_chart3(series)
