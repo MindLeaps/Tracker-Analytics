@@ -57,9 +57,7 @@ module MindleapsAnalytics
       @series5 = get_series_chart5.to_json
 
       # figure 6: Histogram of student performance change by boys and girls
-      series6 = []
-      get_series_chart6(series6)
-      @series6 = series6.to_json
+      @series6 = get_series_chart6.to_json
 
       # figure 8: Average performance per group by days in program
       series10 = []
@@ -420,101 +418,18 @@ module MindleapsAnalytics
 
     end
 
-    def get_series_chart6(series)
+    def get_series_chart6
+      conn = ActiveRecord::Base.connection.raw_connection
+      res_male = conn.exec(performance_change_query(@selected_students.where(gender: 'M'))).values
+      res_female = conn.exec(performance_change_query(@selected_students.where(gender: 'F'))).values
 
-      # top query
-      if not @selected_student_id.nil? and not @selected_student_id == '' and not @selected_student_id == 'All'
-        students = Student.where(id: @selected_student_id)
-      elsif not @selected_group_id.nil? and not @selected_group_id == '' and not @selected_group_id == 'All'
-        students = Student.where(group_id: @selected_group_id)
-      elsif not @selected_chapter_id.nil? and not @selected_chapter_id == '' and not @selected_chapter_id == 'All'
-        students = Student.includes(:group).where(groups: {chapter_id: @selected_chapter_id})
-      elsif not @selected_organization_id.nil? and not @selected_organization_id == '' and not @selected_organization_id == 'All'
-        students = Student.includes(group: :chapter).where(chapters: {organization_id: @selected_organization_id})
-      else
-        students = Student.where(group: @groups)
-      end
-
-      # Hash to contain the genders series, so one entry per gender
-      series_double_hash = Hash.new
-      # Hash to contain the total number of entries per gender
-      series_totals_hash = Hash.new(0)
-
-      # Calculate the performance difference per student
-      students.each do |student|
-        min_date = Grade.where(student_id: student.id).joins(:lesson).minimum(:date)
-        max_date = Grade.where(student_id: student.id).joins(:lesson).maximum(:date)
-        min_avg = Grade.includes(:lesson).where(grades: {student_id: student.id}, lessons: {date: min_date}).joins(:grade_descriptor).average(:mark)
-        max_avg = Grade.includes(:lesson).where(grades: {student_id: student.id}, lessons: {date: max_date}).joins(:grade_descriptor).average(:mark)
-
-        min_avg = 0 if min_avg.nil?
-        max_avg = 0 if max_avg.nil?
-
-        # Bin the x-axis on 0.5's
-        difference = (((max_avg - min_avg) * 2) + 0.5).floor.to_f / 2
-
-        # add this point to the correct (meaning: for this student's Gender) data series
-        # so we're creating a new hash per gender, and add that to the seriesDoubleHash
-        # all in all the data structure looks like this: seriesDoubleHash[:Gender] => Hash[:x-axis bin] => Count
-        if series_double_hash[student.gender] == nil
-          series_double_hash[student.gender] = Hash.new(0)
-        end
-        series_double_hash[student.gender][difference.object_id] += 1
-        # Calculate the totals so we can calculate the distribution per series
-        series_totals_hash[student.gender] += 1
-      end
-
-      # Calculation is done, now convert the seriesDoubleHash to something HighCharts understands
-      # Loop over the Genders: max 2
-      series_double_hash.each do |key, hash|
-        # Array to contain the x and y values
-        # x-axis = difference bin, y value = frequency
-        data = []
-        # Loop over the Difference bins: Expected 10 - 20 entries
-        # Map the hash keys back to x-axis bins and transform the y-axis counts to frequencies
-        hash.each do |difference, count|
-          data << [ObjectSpace._id2ref(difference), (count * 100).to_f / series_totals_hash[key]]
-        end
-        series << {name: t(:gender) + ' ' + key, data: data}
-      end
-
+      [{name: "#{t(:gender)} M", data: res_male}, {name: "#{t(:gender)} F", data: res_female}]
     end
 
     def get_series_chart5
       conn = ActiveRecord::Base.connection.raw_connection
 
-      res = conn.exec("with w1 AS (
-                          SELECT
-                            s.id as student_id,
-                            l.id as lesson_id,
-                            date,
-                            avg(mark)
-                          FROM students AS s
-                            LEFt JOIN grades AS g
-                              ON s.id = g.student_id
-                            LEFT JOIN lessons AS l
-                              ON l.id = g.lesson_id
-                            LEFT JOIN grade_descriptors AS gd
-                              ON gd.id = g.grade_descriptor_id
-                          WHERE s.id IN (#{@selected_students.pluck(:id).join(', ')})
-                          GROUP BY s.id, l.id
-                      ),
-                      min_table AS (
-                          SELECT * from w1 s1 WHERE (student_id, date) IN (
-                          SELECT student_id, MIN(date) FROM w1
-                                                       GROUP BY student_id
-                          ) OR date is null
-                      ),
-                      max_table AS (
-                        SELECT * from w1 s1 WHERE (student_id, date) IN (
-                          SELECT student_id, MAX(date) FROM w1
-                          GROUP BY student_id
-                        ) OR date is null
-                      )
-                      SELECT COALESCE(floor(((max_table.avg - min_table.avg) * 2) + 0.5) / 2, 0)::FLOAT as diff, count(*) * 100 / (SUM(count(*)) over ())::FLOAT FROM max_table
-                        JOIN min_table
-                        ON max_table.student_id = min_table.student_id
-                      GROUP BY diff;").values
+      res = conn.exec(performance_change_query(@selected_students)).values
 
       [{name: t(:frequency_perc), data: res}]
     end
@@ -721,6 +636,41 @@ module MindleapsAnalytics
       return policy_scope resource_class if id.nil? || id == '' || id == 'All'
       return yield resource_class if block_given?
       resource_class.where(id: id)
+    end
+
+    def performance_change_query(students)
+      "with w1 AS (
+          SELECT
+            s.id as student_id,
+            l.id as lesson_id,
+            date,
+            avg(mark)
+          FROM students AS s
+            LEFt JOIN grades AS g
+              ON s.id = g.student_id
+            LEFT JOIN lessons AS l
+              ON l.id = g.lesson_id
+            LEFT JOIN grade_descriptors AS gd
+              ON gd.id = g.grade_descriptor_id
+          WHERE s.id IN (#{students.pluck(:id).join(', ')})
+          GROUP BY s.id, l.id
+      ),
+      min_table AS (
+          SELECT * from w1 s1 WHERE (student_id, date) IN (
+          SELECT student_id, MIN(date) FROM w1
+                                       GROUP BY student_id
+          ) OR date is null
+      ),
+      max_table AS (
+        SELECT * from w1 s1 WHERE (student_id, date) IN (
+          SELECT student_id, MAX(date) FROM w1
+          GROUP BY student_id
+        ) OR date is null
+      )
+      SELECT COALESCE(floor(((max_table.avg - min_table.avg) * 2) + 0.5) / 2, 0)::FLOAT as diff, count(*) * 100 / (SUM(count(*)) over ())::FLOAT FROM max_table
+        JOIN min_table
+        ON max_table.student_id = min_table.student_id
+      GROUP BY diff;"
     end
   end
 end
