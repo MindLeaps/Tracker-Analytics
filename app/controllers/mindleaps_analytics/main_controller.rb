@@ -9,6 +9,11 @@ module MindleapsAnalytics
       @selected_chapter_id = params[:chapter_select]
       @selected_group_id = params[:group_select]
       @selected_student_id = params[:student_select]
+
+      @selected_organizations = find_resource_by_id_param @selected_organization_id, Organization
+      @selected_chapters = find_resource_by_id_param(@selected_chapter_id, Chapter) { |c| c.where(organization: @selected_organizations) }
+      @selected_groups = find_resource_by_id_param(@selected_group_id, Group) { |g| g.where(chapter: @selected_chapters) }
+      @selected_students = find_resource_by_id_param(@selected_student_id, Student) { |s| s.where(group: @selected_groups) }
     end
 
     def first
@@ -39,11 +44,9 @@ module MindleapsAnalytics
 
       # figure 2: # Assessments per month
       # This chart has a categorical x-axis: the months
-      categories2 = []
-      series2 = []
-      get_series_chart2(categories2, series2)
-      @categories2 = categories2.to_json
-      @series2 = series2.to_json
+      res2 = get_series_chart2
+      @categories2 = res2[:categories].to_json
+      @series2 = res2[:series].to_json
 
       # figure 4: Histogram of student performance values
       # count average performance per student
@@ -724,52 +727,33 @@ module MindleapsAnalytics
       series << {name: t(:frequency_perc), data: data}
     end
 
-    def get_series_chart2(categories, series)
-      # top query
-      if not @selected_student_id.nil? and not @selected_student_id == '' and not @selected_student_id == 'All'
-        #dates = Grade.joins(:lesson).where(student_id: @selected_student_id).group(:date).count.keys
-        dates = Lesson.includes(:grades).where(grades: {student_id: @selected_student_id}).group(:date).count.keys
-      elsif not @selected_group_id.nil? and not @selected_group_id == '' and not @selected_group_id == 'All'
-        dates = Lesson.where(group_id: @selected_group_id).group(:date).count.keys
-      elsif not @selected_chapter_id.nil? and not @selected_chapter_id == '' and not @selected_chapter_id == 'All'
-        dates = Lesson.includes(:group).where(groups: {chapter_id: @selected_chapter_id}).group(:date).count.keys
-      elsif not @selected_organization_id.nil? and not @selected_organization_id == '' and not @selected_organization_id == 'All'
-        dates = Lesson.includes(group: :chapter).where(chapters: {organization_id: @selected_organization_id}).group(:date).count.keys
-      else
-        dates = Lesson.where(group: @groups).group(:date).count.keys
-      end
+    def get_series_chart2
+      conn = ActiveRecord::Base.connection.raw_connection
+      lesson_ids = Lesson.where(group_id: @selected_students.map(&:group_id).uniq).pluck(:id)
 
-      months_raw = {}
+      res = conn.exec("select to_char(date_trunc('month', l.date), 'YYYY-MM') as month, count(distinct(l.id, g.student_id)) as assessments
+                                    from lessons as l
+                                      inner join grades as g
+                                        on l.id = g.lesson_id
+                                      inner join groups as gr
+                                        on gr.id = l.group_id
+                                    where l.id IN (#{lesson_ids.join(', ')})
+                                    group by month
+                                    order by month;").values
 
-      # Create a sortable key here, so we can sort the hash later
-      dates.each do |date|
-        month = date.year.to_s + date.month.to_s
-        months_raw[month.to_sym] = [date.year, date.month]
-      end
-
-      # Sort and turn into an array
-      months_sorted = months_raw.sort
-
-      data = []
-      months_sorted.each do |key, values|
-        from = Date.new(values[0], values[1], 1)
-        to = Date.new(values[0], values[1], 1).at_end_of_month
-        lessons = Lesson.where('date >= :date_from AND date <= :date_to AND group_id IN (:group_ids)', {date_from: from, date_to: to, group_ids: @groups.map(&:id)})
-        nr_of_assessments = 0
-        lessons.each do |lesson|
-          if not @selected_student_id.nil? and not @selected_student_id == '' and not @selected_student_id == 'All'
-            nr_of_assessments += Grade.where(lesson_id: lesson.id, student: @selected_student_id).distinct.count(:student_id)
-          else
-            nr_of_assessments += Grade.where(lesson_id: lesson.id).distinct.count(:student_id)
-          end
-        end
-        categories << key.to_s
-        data << nr_of_assessments
-      end
-      series << {name: t(:nr_of_assessments), data: data}
+      {
+        categories: res.map { |e| e[0] },
+        series: [{name: t(:nr_of_assessments), data: res.map { |e| e[1] }}]
+      }
     end
 
-  end
+    private
 
+    def find_resource_by_id_param(id, resource_class)
+      return policy_scope resource_class if id.nil? || id == '' || id == 'All'
+      return yield resource_class if block_given?
+      resource_class.find id
+    end
+  end
 end
 
