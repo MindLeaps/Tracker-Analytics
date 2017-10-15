@@ -114,14 +114,15 @@
     });
     $('#chapter_select').change(function () {
 
+        var selectedOrganization = $('#organization_select :selected').val();
         var selectedChapter = $('#chapter_select :selected').val();
-//        console.log(selectedChapter)
 
         $.ajax({
             url: '<%=find_update_groups_path%>',
             type: 'GET',
             dataType: 'json',
             data: {
+                organization_id: selectedOrganization,
                 chapter_id: selectedChapter
             },
             success: function (data) {
@@ -142,6 +143,8 @@
 
                     $('#group_select').append(opt, null);
                 }
+                $('#group_select').select(0);
+                $('#group_select').change();
             },
             error: function (data) {
                 debugger;
