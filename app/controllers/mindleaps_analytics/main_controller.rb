@@ -439,8 +439,11 @@ module MindleapsAnalytics
     def get_series_chart5
       conn = ActiveRecord::Base.connection.raw_connection
 
-      res = conn.exec(performance_change_query(@selected_students)).values
-
+      if @selected_students.blank?
+        res = []
+      else
+        res = conn.exec(performance_change_query(@selected_students)).values
+      end
       [{name: t(:frequency_perc), data: res}]
     end
 
@@ -604,18 +607,22 @@ module MindleapsAnalytics
 
     def get_series_chart4
       conn = ActiveRecord::Base.connection.raw_connection
-      res = conn.exec("select COALESCE(rounded, 0)::INT as mark, count(*) * 100 / (sum(count(*)) over ())::FLOAT as percentage
-                          from (select s.id, round(avg(mark)) as rounded
-                                from students as s
-                                  left join grades as g
-                                    on s.id = g.student_id
-                                  left join grade_descriptors as gd
-                                    on gd.id = g.grade_descriptor_id
-                                WHERE s.id IN (#{@selected_students.pluck(:id).join(', ')})
-                                GROUP BY s.id
-                          ) as student_round_mark
-                        GROUP BY mark
-                        ORDER BY mark;").values
+      if @selected_students.blank?
+        res = []
+      else
+        res = conn.exec("select COALESCE(rounded, 0)::INT as mark, count(*) * 100 / (sum(count(*)) over ())::FLOAT as percentage
+                            from (select s.id, round(avg(mark)) as rounded
+                                  from students as s
+                                    left join grades as g
+                                      on s.id = g.student_id
+                                    left join grade_descriptors as gd
+                                      on gd.id = g.grade_descriptor_id
+                                  WHERE s.id IN (#{@selected_students.pluck(:id).join(', ')})
+                                  GROUP BY s.id
+                            ) as student_round_mark
+                          GROUP BY mark
+                          ORDER BY mark;").values
+      end
 
       [{name: t(:frequency_perc), data: res}]
     end
@@ -624,15 +631,19 @@ module MindleapsAnalytics
       conn = ActiveRecord::Base.connection.raw_connection
       lesson_ids = Lesson.where(group_id: @selected_students.map(&:group_id).uniq).pluck(:id)
 
-      res = conn.exec("select to_char(date_trunc('month', l.date), 'YYYY-MM') as month, count(distinct(l.id, g.student_id)) as assessments
-                                    from lessons as l
-                                      inner join grades as g
-                                        on l.id = g.lesson_id
-                                      inner join groups as gr
-                                        on gr.id = l.group_id
-                                    where l.id IN (#{lesson_ids.join(', ')})
-                                    group by month
-                                    order by month;").values
+      if lesson_ids.blank?
+        res = []
+      else
+        res = conn.exec("select to_char(date_trunc('month', l.date), 'YYYY-MM') as month, count(distinct(l.id, g.student_id)) as assessments
+                                      from lessons as l
+                                        inner join grades as g
+                                          on l.id = g.lesson_id
+                                        inner join groups as gr
+                                          on gr.id = l.group_id
+                                      where l.id IN (#{lesson_ids.join(', ')})
+                                      group by month
+                                      order by month;").values
+      end
 
       {
         categories: res.map { |e| e[0] },
