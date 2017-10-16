@@ -654,9 +654,14 @@ module MindleapsAnalytics
     private
 
     def find_resource_by_id_param(id, resource_class)
-      return policy_scope resource_class if id.nil? || id == '' || id == 'All'
-      return yield resource_class if block_given?
-      resource_class.where(id: id)
+      return resource_class.where(id: id) unless all_selected?(id)
+      return policy_scope(yield resource_class) if block_given?
+
+      policy_scope resource_class
+    end
+
+    def all_selected?(id_selected)
+      id_selected.nil? || id_selected == '' || id_selected == 'All'
     end
 
     def performance_change_query(students)
