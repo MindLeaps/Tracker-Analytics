@@ -672,19 +672,19 @@ module MindleapsAnalytics
             date,
             avg(mark)
           FROM students AS s
-            LEFt JOIN grades AS g
+            JOIN grades AS g
               ON s.id = g.student_id
-            LEFT JOIN lessons AS l
+            JOIN lessons AS l
               ON l.id = g.lesson_id
-            LEFT JOIN grade_descriptors AS gd
+            JOIN grade_descriptors AS gd
               ON gd.id = g.grade_descriptor_id
           WHERE s.id IN (#{students.pluck(:id).join(', ')})
           GROUP BY s.id, l.id
       ),
       min_table AS (
           SELECT * from w1 s1 WHERE (student_id, date) IN (
-          SELECT student_id, MIN(date) FROM w1
-                                       GROUP BY student_id
+            SELECT student_id, MIN(date) FROM w1
+            GROUP BY student_id
           ) OR date is null
       ),
       max_table AS (
@@ -696,7 +696,8 @@ module MindleapsAnalytics
       SELECT COALESCE(floor(((max_table.avg - min_table.avg) * 2) + 0.5) / 2, 0)::FLOAT as diff, count(*) * 100 / (SUM(count(*)) over ())::FLOAT FROM max_table
         JOIN min_table
         ON max_table.student_id = min_table.student_id
-      GROUP BY diff;"
+      GROUP BY diff
+      ORDER BY diff;"
     end
   end
 end
