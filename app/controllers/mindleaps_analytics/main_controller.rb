@@ -163,7 +163,7 @@ module MindleapsAnalytics
 
       regression_values = series.pluck(:data).map(&:length).max
 
-      regression = regression_values.times.map do |index|
+      regression = Array.new(regression_values) do |index|
         p_intercept + p_t1 * index + p_t2 * index**2 + p_t3 * index**3 + p_t4 * index**4 + p_age * age
       end
 
