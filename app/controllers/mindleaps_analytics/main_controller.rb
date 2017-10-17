@@ -53,14 +53,9 @@ module MindleapsAnalytics
 
       @series6 = histogram_of_student_performance_change_by_gender.to_json
 
-      series10 = []
-      average_performance_per_group_by_lesson(series10)
-      @series10 = series10.to_json
+      @series10 = average_performance_per_group_by_lesson.to_json
 
-      series9 = []
-      performance_data_for_each_student_versus_time_in_program(series9)
-      @series9 = series9.to_json
-
+      @series9 = performance_data_for_each_student_versus_time_in_program.to_json
     end
 
     def second
@@ -141,8 +136,8 @@ module MindleapsAnalytics
     end
 
 
-    def average_performance_per_group_by_lesson(series)
-
+    def average_performance_per_group_by_lesson
+      series = []
       # top query
       if not @selected_student_id.nil? and not @selected_student_id == '' and not @selected_student_id == 'All'
         lessons = Lesson.includes(:grades).where(grades: {student_id: @selected_student_id})
@@ -215,10 +210,11 @@ module MindleapsAnalytics
       regression.sort_by! {|array| array[0]}
       series << {name: t(:regression_curve), data: regression, color: '#FF0000', lineWidth: 1, marker: {enabled: false}}
 
+      series
     end
 
-    def performance_data_for_each_student_versus_time_in_program(series)
-
+    def performance_data_for_each_student_versus_time_in_program
+      series = []
       # regression parameters
       p_intercept = 3.31 # RegressionParameter.where(name: 'intercept').first.value
       p_t1 = 0.0556501190994651 # RegressionParameter.where(name: 't1').first.value
@@ -327,7 +323,7 @@ module MindleapsAnalytics
           series << {name: t(:below_regression), data: array}
         end
       end
-
+      series
     end
 
     def get_series_chart8(series)
