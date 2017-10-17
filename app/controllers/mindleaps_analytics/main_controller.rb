@@ -42,32 +42,23 @@ module MindleapsAnalytics
         @students = policy_scope Student.order(:last_name, :first_name)
       end
 
-      # figure 2: # Assessments per month
-      # This chart has a categorical x-axis: the months
-      res2 = get_series_chart2
+      res2 = assesments_per_month
       @categories2 = res2[:categories].to_json
       @series2 = res2[:series].to_json
 
-      # figure 4: Histogram of student performance values
-      # count average performance per student
 
-      @series4 = get_series_chart4.to_json
+      @series4 = histogram_of_student_performance.to_json
 
-      # figure 5: Histogram of student performance change
-      @series5 = get_series_chart5.to_json
+      @series5 = histogram_of_student_performance_change.to_json
 
-      # figure 6: Histogram of student performance change by boys and girls
-      @series6 = get_series_chart6.to_json
+      @series6 = histogram_of_student_performance_change_by_gender.to_json
 
-      # figure 8: Average performance per group by days in program
       series10 = []
-      get_series_chart10(series10)
+      average_performance_per_group_by_lesson(series10)
       @series10 = series10.to_json
 
-      # Figure 9: Performance data for each student versus time in program
-      # Different series for above/below regression formula (Patrick's formula)
       series9 = []
-      get_series_chart9(series9)
+      performance_data_for_each_student_versus_time_in_program(series9)
       @series9 = series9.to_json
 
     end
@@ -150,7 +141,7 @@ module MindleapsAnalytics
     end
 
 
-    def get_series_chart10(series)
+    def average_performance_per_group_by_lesson(series)
 
       # top query
       if not @selected_student_id.nil? and not @selected_student_id == '' and not @selected_student_id == 'All'
@@ -226,7 +217,7 @@ module MindleapsAnalytics
 
     end
 
-    def get_series_chart9(series)
+    def performance_data_for_each_student_versus_time_in_program(series)
 
       # regression parameters
       p_intercept = 3.31 # RegressionParameter.where(name: 'intercept').first.value
@@ -418,7 +409,7 @@ module MindleapsAnalytics
 
     end
 
-    def get_series_chart6
+    def histogram_of_student_performance_change_by_gender
       conn = ActiveRecord::Base.connection.raw_connection
       male_students = @selected_students.where(gender: 'M')
       female_students = @selected_students.where(gender: 'F')
@@ -436,7 +427,7 @@ module MindleapsAnalytics
       result
     end
 
-    def get_series_chart5
+    def histogram_of_student_performance_change
       conn = ActiveRecord::Base.connection.raw_connection
 
       if @selected_students.blank?
@@ -605,7 +596,7 @@ module MindleapsAnalytics
 
     end
 
-    def get_series_chart4
+    def histogram_of_student_performance
       conn = ActiveRecord::Base.connection.raw_connection
       if @selected_students.blank?
         res = []
@@ -627,7 +618,7 @@ module MindleapsAnalytics
       [{name: t(:frequency_perc), data: res}]
     end
 
-    def get_series_chart2
+    def assesments_per_month
       conn = ActiveRecord::Base.connection.raw_connection
       lesson_ids = Lesson.where(group_id: @selected_students.map(&:group_id).uniq).pluck(:id)
 
