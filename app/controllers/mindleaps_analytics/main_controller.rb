@@ -105,8 +105,7 @@ module MindleapsAnalytics
       # x-axis: nr. of lessons
       # y-axis: average score
       # series = [{skill : skill_name, series : [{name : group_name, data : [[x, y], ..]}]}]
-      series3 = []
-      get_series_chart3(series3)
+      series3 = performance_per_skill
       @count = series3.count
       @series3 = series3.to_json
 
@@ -181,7 +180,6 @@ module MindleapsAnalytics
       p_t4 = -8.44049073102675E-09 # RegressionParameter.where(name: 't4').first.value
       p_age = 0.0482714171873393 # RegressionParameter.where(name: 'age').first.value
 
-      # top query
       if not @selected_student_id.nil? and not @selected_student_id == '' and not @selected_student_id == 'All'
         lessons = Lesson.includes(:grades).where(grades: {student_id: @selected_student_id})
         student = Student.find(@selected_student_id)
@@ -392,7 +390,8 @@ module MindleapsAnalytics
       [{name: t(:frequency_perc), data: res}]
     end
 
-    def get_series_chart3(series)
+    def performance_per_skill
+      series = []
       skills = Subject.includes(:skills).find(@subject).skills
       series_double_hash = Hash.new
       skill_hash = Hash.new
@@ -547,7 +546,7 @@ module MindleapsAnalytics
         skill_series << {name: t(:regression_curve), data: regression, color: '#FF0000', lineWidth: 1, marker: {enabled: false}}
         series << {skill: skill_name, series: skill_series}
       end
-
+      series
     end
 
     def histogram_of_student_performance
