@@ -392,11 +392,6 @@ module MindleapsAnalytics
 
     def performance_per_skill
       series = []
-      skills = Subject.includes(:skills).find(@subject).skills
-      series_double_hash = Hash.new
-      skill_hash = Hash.new
-
-      # top query
       if not @selected_student_id.nil? and not @selected_student_id == '' and not @selected_student_id == 'All'
         lessons = Lesson.includes(:grades).where(grades: {student_id: @selected_student_id})
       elsif not @selected_group_id.nil? and not @selected_group_id == '' and not @selected_group_id == 'All'
@@ -408,9 +403,6 @@ module MindleapsAnalytics
       else
         lessons = Lesson.where(group: @groups)
       end
-
-      # Calculate the average performance for this lesson and group
-      age = 13
 
       conn = ActiveRecord::Base.connection.raw_connection
       groups = {}
@@ -439,67 +431,13 @@ module MindleapsAnalytics
 
       # Calculation is done, now convert the series_hash to something HighCharts understands
       result.each do |skill_name, hash|
-
-        regression = []
-        skill_hash[skill_name].each do |nr_of_lessons|
-
-          point = []
-          point << nr_of_lessons
-          case skill_name
-            when 'Memorization'
-              p_t1 = 0.059758
-              p_t2 = -0.00076705
-              p_t3 = 4.3031e-06
-              p_t4 = -8.3512e-09
-              p_age = 0.050686
-            when 'Grit'
-              p_t1 = 0.026253
-              p_t2 = -0.00033544
-              p_t3 = 1.9132e-06
-              p_t4 = -3.6252e-09
-              p_age = 0.038559
-            when 'Teamwork'
-              p_t1 = 0.055124
-              p_t2 = -0.00069727
-              p_t3 = 3.6287e-06
-              p_t4 = -6.3662e-09
-              p_age = 0.05823
-            when 'Discipline'
-              p_t1 = 0.026199
-              p_t2 = -0.00035038
-              p_t3 = 2.0376e-06
-              p_t4 = -4.0821e-09
-              p_age = 0.062841
-            when 'Self-Esteem'
-              p_t1 = 0.054099
-              p_t2 = -0.00068634
-              p_t3 = 3.6989e-06
-              p_t4 = -6.8504e-09
-              p_age = 0.039392
-            when 'Creativity & Self-Expression'
-              p_t1 = 0.051559
-              p_t2 = -0.0006465
-              p_t3 = 3.5453e-06
-              p_t4 = -6.7835e-09
-              p_age = 0.041264
-            when 'Language'
-              p_t1 = 0.079468
-              p_t2 = -0.0010474
-              p_t3 = 5.6985e-06
-              p_t4 = -1.0727e-08
-              p_age = 0.050222
-          end
-          # No intercept value given bij Patrick, so we use the average over all the group values here (=3.5)
-          point << 3.5 + p_t1 * nr_of_lessons + p_t2 * nr_of_lessons**2 + p_t3 * nr_of_lessons**3 + p_t4 * nr_of_lessons**4 + p_age * age
-          regression << point
-        end
+        regression = RegressionService.new.skill_regression skill_name, skill_hash[skill_name].uniq.length
 
         skill_series = []
         hash.each do |group, array|
           skill_series << {name: t(:group) + ' ' + group, data: array}
         end
 
-        regression.sort_by! {|a| a[0]}
         skill_series << {name: t(:regression_curve), data: regression, color: '#FF0000', lineWidth: 1, marker: {enabled: false}}
         series << {skill: skill_name, series: skill_series}
       end
