@@ -424,14 +424,9 @@ module MindleapsAnalytics
         end
       end
 
-      skill_hash = query_result.map { |e| [e[-2], e[0]] }.reduce({}) do |acc, e|
-        acc.has_key?(e[0]) ? acc[e[0]].push(e[1]) : acc[e[0]] = [e[1]]
-        acc
-      end
-
       # Calculation is done, now convert the series_hash to something HighCharts understands
       result.each do |skill_name, hash|
-        regression = RegressionService.new.skill_regression skill_name, skill_hash[skill_name].uniq.length
+        regression = RegressionService.new.skill_regression skill_name, hash.values.map(&:length).max
 
         skill_series = []
         hash.each do |group, array|
