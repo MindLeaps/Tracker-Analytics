@@ -60,7 +60,6 @@
             },
             success: function (data) {
                 var chapters = data.chapters;
-                debugger;
 
                 $('#chapter_select').empty();
                 var opt = document.createElement('option');
@@ -80,7 +79,6 @@
                 $('#chapter_select').change();
             },
             error: function (data) {
-                debugger;
             }
         });
         $.ajax({
@@ -92,7 +90,6 @@
             },
             success: function (data) {
                 var subjects = data.subjects;
-                debugger;
 
                 $('#subject_select').empty();
 
@@ -108,7 +105,6 @@
                 $('#subject_select').select(0);
             },
             error: function (data) {
-                debugger;
             }
         });
     });
@@ -127,7 +123,6 @@
             },
             success: function (data) {
                 var groups = data.groups;
-                debugger;
 
                 $('#group_select').empty();
                 var opt = document.createElement('option');
@@ -147,7 +142,6 @@
                 $('#group_select').change();
             },
             error: function (data) {
-                debugger;
             }
         });
     });
@@ -169,7 +163,6 @@
             },
             success: function (data) {
                 var students = data.students;
-                debugger;
 
                 $('#student_select').empty();
                 var opt = document.createElement('option');
@@ -187,7 +180,6 @@
                 }
             },
             error: function (data) {
-                debugger;
             }
         });
     });
@@ -211,7 +203,12 @@
                     enabled: false
                 },
                 tooltip: {
-                    valueDecimals: 2
+                    formatter: function() {
+                      return '<span style="color:' + this.point.color + '">\u25CF</span> ' + this.series.name +
+                             '<br/><span>x: <span style="font-weight: bold">' + this.point.x + '</span></span>' +
+                             '<br/><span>y: <span style="font-weight: bold">' + this.point.y + '</span></span>' +
+                             (this.point.date ? '<br/><span>Lesson Date: ' + this.point.date + '</span>' : '');
+                    }
                 },
                 title: {
                     text: dataset.skill
@@ -229,6 +226,11 @@
                 },
                 plotOptions: {
                     series: {
+                        events: {
+                            click: function(e, a1, a2) {
+                              window.open(e.point.lesson_url, '_blank')
+                            }
+                        },
                         marker: {
                             radius: 2
                         }

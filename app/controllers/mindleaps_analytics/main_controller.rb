@@ -416,12 +416,12 @@ module MindleapsAnalytics
         acc.tap do |a|
           if a.has_key?(skill_name)
             if a[skill_name].has_key?(group_name)
-              a[skill_name][group_name].push(e[0, 2])
+              a[skill_name][group_name].push({x: e[0], y: e[1], lesson_url: Rails.application.routes.url_helpers.lesson_path(e[2]), date: e[3]})
             else
-              a[skill_name][group_name] = [e[0, 2]]
+              a[skill_name][group_name] = [{x: e[0], y: e[1], lesson_url: Rails.application.routes.url_helpers.lesson_path(e[2]), date: e[3]}]
             end
           else
-            a[skill_name] = { group_name => [e[0, 2]] }
+            a[skill_name] = { group_name => [{x: e[0], y: e[1], lesson_url: Rails.application.routes.url_helpers.lesson_path(e[2]), date: e[3]}] }
           end
         end
       end
@@ -551,7 +551,7 @@ module MindleapsAnalytics
     end
 
     def performance_per_skill_in_lessons_query(lessons)
-      "select rank() over(PARTITION BY gr.id, s.id order by date) - 1 as rank, round(avg(mark), 2)::FLOAT, s.skill_name, gr.id::INT from
+      "select rank() over(PARTITION BY gr.id, s.id order by date) - 1 as rank, round(avg(mark), 2)::FLOAT, l.id, date, s.skill_name, gr.id::INT from
           lessons as l
           join groups as gr on gr.id = l.group_id
           join grades as g on l.id = g.lesson_id
