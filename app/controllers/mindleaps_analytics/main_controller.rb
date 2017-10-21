@@ -392,13 +392,13 @@ module MindleapsAnalytics
 
     def performance_per_skill
       series = []
-      if not @selected_student_id.nil? and not @selected_student_id == '' and not @selected_student_id == 'All'
+      if @selected_student_id.present? && @selected_student_id != 'All'
         lessons = Lesson.includes(:grades).where(grades: {student_id: @selected_student_id})
-      elsif not @selected_group_id.nil? and not @selected_group_id == '' and not @selected_group_id == 'All'
+      elsif @selected_group_id.present? && @selected_group_id != 'All'
         lessons = Lesson.where(group_id: @selected_group_id)
-      elsif not @selected_chapter_id.nil? and not @selected_chapter_id == '' and not @selected_chapter_id == 'All'
+      elsif @selected_chapter_id.present? && @selected_chapter_id != 'All'
         lessons = Lesson.includes(:group).where(groups: {chapter_id: @selected_chapter_id})
-      elsif not @selected_organization_id.nil? and not @selected_organization_id == '' and not @selected_organization_id == 'All'
+      elsif @selected_organization_id.present? && @selected_organization_id != 'All'
         lessons = Lesson.includes(group: :chapter).where(chapters: {organization_id: @selected_organization_id})
       else
         lessons = Lesson.where(group: @groups)
