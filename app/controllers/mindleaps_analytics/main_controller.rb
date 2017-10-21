@@ -404,6 +404,8 @@ module MindleapsAnalytics
         lessons = Lesson.where(group: @groups)
       end
 
+      return [] if lessons.empty?
+
       conn = ActiveRecord::Base.connection.raw_connection
       groups = {}
       query_result = conn.exec(performance_per_skill_in_lessons_query(lessons)).values
