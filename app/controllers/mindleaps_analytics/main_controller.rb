@@ -105,8 +105,7 @@ module MindleapsAnalytics
       # x-axis: nr. of lessons
       # y-axis: average score
       # series = [{skill : skill_name, series : [{name : group_name, data : [[x, y], ..]}]}]
-      series3 = []
-      get_series_chart3(series3)
+      series3 = performance_per_skill
       @count = series3.count
       @series3 = series3.to_json
 
@@ -181,7 +180,6 @@ module MindleapsAnalytics
       p_t4 = -8.44049073102675E-09 # RegressionParameter.where(name: 't4').first.value
       p_age = 0.0482714171873393 # RegressionParameter.where(name: 'age').first.value
 
-      # top query
       if not @selected_student_id.nil? and not @selected_student_id == '' and not @selected_student_id == 'All'
         lessons = Lesson.includes(:grades).where(grades: {student_id: @selected_student_id})
         student = Student.find(@selected_student_id)
@@ -392,162 +390,55 @@ module MindleapsAnalytics
       [{name: t(:frequency_perc), data: res}]
     end
 
-    def get_series_chart3(series)
-      skills = Subject.includes(:skills).find(@subject).skills
-      series_double_hash = Hash.new
-      skill_hash = Hash.new
-
-      # top query
-      if not @selected_student_id.nil? and not @selected_student_id == '' and not @selected_student_id == 'All'
+    def performance_per_skill
+      series = []
+      if @selected_student_id.present? && @selected_student_id != 'All'
         lessons = Lesson.includes(:grades).where(grades: {student_id: @selected_student_id})
-      elsif not @selected_group_id.nil? and not @selected_group_id == '' and not @selected_group_id == 'All'
+      elsif @selected_group_id.present? && @selected_group_id != 'All'
         lessons = Lesson.where(group_id: @selected_group_id)
-      elsif not @selected_chapter_id.nil? and not @selected_chapter_id == '' and not @selected_chapter_id == 'All'
+      elsif @selected_chapter_id.present? && @selected_chapter_id != 'All'
         lessons = Lesson.includes(:group).where(groups: {chapter_id: @selected_chapter_id})
-      elsif not @selected_organization_id.nil? and not @selected_organization_id == '' and not @selected_organization_id == 'All'
+      elsif @selected_organization_id.present? && @selected_organization_id != 'All'
         lessons = Lesson.includes(group: :chapter).where(chapters: {organization_id: @selected_organization_id})
       else
         lessons = Lesson.where(group: @groups)
       end
 
-      # Calculate the average performance for this lesson and group
-      age = 0
-      lessons.each do |lesson|
-        if not @selected_student_id.nil? and not @selected_student_id == '' and not @selected_student_id == 'All'
-          nr_of_lessons = Lesson.includes(:grades).where('date < :date_to',
-                                                         {date_to: lesson.date}).where(grades: {student_id: @selected_student_id}).distinct.count(:id)
+      return [] if lessons.empty?
 
-          # This student's age (for regression calculation)
-          dob = Student.find(@selected_student_id).dob
-          now = lesson.date
-          age = now.year - dob.year - ((now.month > dob.month || (now.month == dob.month && now.day >= dob.day)) ? 0 : 1)
-          # age = 13
-        else
-          # Count the number of previous lessons for this group
-          nr_of_lessons = Lesson.where('group_id = :group_id AND date < :date_to',
-                                       {group_id: lesson.group_id, date_to: lesson.date}).distinct.count(:id)
-
-          # Calculate the average age for the group (for regression calculation)
-          #
-          # Below code is correct but a performance killer
-          # Also, the regression parameters for age are quite small, making its impact on overall fitted performance small
-          # It's questionable if the costs outweigh the benefits, so for now let's make age a constant
-          # </
-          # now = lesson.date
-          # grades = lesson.grades.all
-          # grades.each do |grade|
-          #   dob = grade.student.dob
-          #   age += now.year - dob.year - ((now.month > dob.month || (now.month == dob.month && now.day >= dob.day)) ? 0 : 1)
-          # end
-          # age /= lesson.grades.size
-          age = 13
-          # />
-
-        end
-
-        skills.each do |skill|
-          if not @selected_student_id.nil? and not @selected_student_id == '' and not @selected_student_id == 'All'
-            avg = Grade.includes(:grade_descriptor).where(lesson_id: lesson.id, student_id: @selected_student_id, grade_descriptors: {skill_id: skill.id}).joins(:grade_descriptor).average(:mark)
+      conn = ActiveRecord::Base.connection.raw_connection
+      groups = {}
+      query_result = conn.exec(performance_per_skill_in_lessons_query(lessons)).values
+      result = query_result.reduce({}) do |acc, e|
+        group_id = e[-1]
+        group_name = groups[group_id] ||= Group.find(group_id).group_chapter_name
+        skill_name = e[-2]
+        acc.tap do |a|
+          if a.has_key?(skill_name)
+            if a[skill_name].has_key?(group_name)
+              a[skill_name][group_name].push({x: e[0], y: e[1], lesson_url: Rails.application.routes.url_helpers.lesson_path(e[2]), date: e[3]})
+            else
+              a[skill_name][group_name] = [{x: e[0], y: e[1], lesson_url: Rails.application.routes.url_helpers.lesson_path(e[2]), date: e[3]}]
+            end
           else
-            # Determine the average group performance for this lesson
-            avg = Grade.includes(:grade_descriptor).where(lesson_id: lesson.id, grade_descriptors: {skill_id: skill.id}).joins(:grade_descriptor).average(:mark)
+            a[skill_name] = { group_name => [{x: e[0], y: e[1], lesson_url: Rails.application.routes.url_helpers.lesson_path(e[2]), date: e[3]}] }
           end
-
-          # Actual performance
-          point = []
-          point << nr_of_lessons
-          point << avg.to_f
-
-          # Prediction based on the regression model
-          if skill_hash[skill.skill_name] == nil
-            skill_hash[skill.skill_name] = []
-          end
-          skill_hash[skill.skill_name] << nr_of_lessons
-
-          if series_double_hash[skill.skill_name] == nil
-            series_double_hash[skill.skill_name] = Hash.new
-          end
-
-          # add this point to the correct (meaning: this Group's) data series
-          # Bug Tracker: TRACK-111 - Conflicts groups with same name from different chapters
-          hash_key = lesson.group.chapter.chapter_name + ' ' + lesson.group.group_name
-          if series_double_hash[skill.skill_name][hash_key] == nil
-            series_double_hash[skill.skill_name][hash_key] = []
-          end
-
-          # series_hash[lesson.group.group_name] << point
-          series_double_hash[skill.skill_name][hash_key] << point
-
         end
       end
 
       # Calculation is done, now convert the series_hash to something HighCharts understands
-      series_double_hash.each do |skill_name, hash|
-
-        regression = []
-        skill_hash[skill_name].each do |nr_of_lessons|
-
-          point = []
-          point << nr_of_lessons
-          case skill_name
-            when 'Memorization'
-              p_t1 = 0.059758
-              p_t2 = -0.00076705
-              p_t3 = 4.3031e-06
-              p_t4 = -8.3512e-09
-              p_age = 0.050686
-            when 'Grit'
-              p_t1 = 0.026253
-              p_t2 = -0.00033544
-              p_t3 = 1.9132e-06
-              p_t4 = -3.6252e-09
-              p_age = 0.038559
-            when 'Teamwork'
-              p_t1 = 0.055124
-              p_t2 = -0.00069727
-              p_t3 = 3.6287e-06
-              p_t4 = -6.3662e-09
-              p_age = 0.05823
-            when 'Discipline'
-              p_t1 = 0.026199
-              p_t2 = -0.00035038
-              p_t3 = 2.0376e-06
-              p_t4 = -4.0821e-09
-              p_age = 0.062841
-            when 'Self-Esteem'
-              p_t1 = 0.054099
-              p_t2 = -0.00068634
-              p_t3 = 3.6989e-06
-              p_t4 = -6.8504e-09
-              p_age = 0.039392
-            when 'Creativity & Self-Expression'
-              p_t1 = 0.051559
-              p_t2 = -0.0006465
-              p_t3 = 3.5453e-06
-              p_t4 = -6.7835e-09
-              p_age = 0.041264
-            when 'Language'
-              p_t1 = 0.079468
-              p_t2 = -0.0010474
-              p_t3 = 5.6985e-06
-              p_t4 = -1.0727e-08
-              p_age = 0.050222
-          end
-          # No intercept value given bij Patrick, so we use the average over all the group values here (=3.5)
-          point << 3.5 + p_t1 * nr_of_lessons + p_t2 * nr_of_lessons**2 + p_t3 * nr_of_lessons**3 + p_t4 * nr_of_lessons**4 + p_age * age
-          regression << point
-        end
+      result.each do |skill_name, hash|
+        regression = RegressionService.new.skill_regression skill_name, hash.values.map(&:length).max
 
         skill_series = []
         hash.each do |group, array|
           skill_series << {name: t(:group) + ' ' + group, data: array}
         end
 
-        regression.sort_by! {|a| a[0]}
         skill_series << {name: t(:regression_curve), data: regression, color: '#FF0000', lineWidth: 1, marker: {enabled: false}}
         series << {skill: skill_name, series: skill_series}
       end
-
+      series
     end
 
     def histogram_of_student_performance
@@ -657,6 +548,18 @@ module MindleapsAnalytics
         ON max_table.student_id = min_table.student_id
       GROUP BY diff
       ORDER BY diff;"
+    end
+
+    def performance_per_skill_in_lessons_query(lessons)
+      "select rank() over(PARTITION BY gr.id, s.id order by date) - 1 as rank, round(avg(mark), 2)::FLOAT, l.id, date, s.skill_name, gr.id::INT from
+          lessons as l
+          join groups as gr on gr.id = l.group_id
+          join grades as g on l.id = g.lesson_id
+          join grade_descriptors as gd on gd.id = g.grade_descriptor_id
+          join skills as s on s.id = gd.skill_id
+        WHERE l.id IN (#{lessons.pluck(:id).join(', ')})
+        GROUP BY gr.id, l.id, s.id
+        ORDER BY gr.id, date, s.id;"
     end
   end
 end
