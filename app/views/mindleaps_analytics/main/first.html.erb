@@ -1,8 +1,12 @@
 <head>
   <script src="https://code.highcharts.com/highcharts.js"></script>
 </head>
-<h1>Analytics</h1>
-<%#= @orgname + ' ' + @chapname %>
+
+<%- content_for :header_content do %>
+  <%= render partial: '/shared/header_content', locals: { title: 'General Analytics' } %>
+<%- end %>
+
+<%= render 'mindleaps_analytics/shared/tabs' %>
 
 <%= form_tag do %>
     <table>
