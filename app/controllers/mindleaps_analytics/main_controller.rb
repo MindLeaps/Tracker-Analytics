@@ -56,6 +56,8 @@ module MindleapsAnalytics
       @series10 = average_performance_per_group_by_lesson.to_json
 
       @series9 = performance_data_for_each_student_versus_time_in_program.to_json
+
+      fresh_when etag: [@categories2, @series2, @series4, @series5, @series6, @series10, @series9]
     end
 
     def second
@@ -491,13 +493,13 @@ module MindleapsAnalytics
 
     def get_groups_for_average_performance
       if @selected_student_id.present? && @selected_student_id != 'All'
-        Student.find(@selected_organization_id).group.includes(:chapter)
+        Student.find(@selected_student_id).group
       elsif @selected_group_id.present? && @selected_group_id != 'All'
         Group.includes(:chapter).find(@selected_group_id)
       elsif @selected_chapter_id.present? && @selected_chapter_id != 'All'
         Group.includes(:chapter).where(chapter_id: @selected_chapter_id)
       elsif @selected_organization_id.present? && @selected_organization_id != 'All'
-        Group.includes(:chapter).where(chapter: {organization_id: @selected_organization_id})
+        Group.includes(:chapter).joins(:chapter).where(chapters: { organization_id: @selected_organization_id })
       else
         @groups.includes(:chapter)
       end

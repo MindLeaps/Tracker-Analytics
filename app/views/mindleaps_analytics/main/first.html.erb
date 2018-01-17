@@ -62,132 +62,97 @@
 </table>
 
 <script>
+  //0.3.5
+  function pegasus(a,b,c){return c=new XMLHttpRequest,c.open("GET",a),a=[],pegasus.timeout&&(c.timeout=pegasus.timeout),c.ontimeout=function(a){b=a},c.onreadystatechange=c.then=function(d,e,f,g){if(d&&d.call&&(a=[,d,e]),b&&a[2]&&a[2](b,c),4==c.readyState&&(f=a[0|c.status/200])){try{g=JSON.parse(c.responseText)}catch(a){g=null}f(g,c)}},c.send(),c}
+
     $('#organization_select').change(function () {
+      var selectedOrganization = $('#organization_select :selected').val();
+      var selectedChapter = $('#chapter_select :selected').val();
+      var selectedGroup = $('#group_select :selected').val();
 
-        var selectedOrganization = $('#organization_select :selected').val();
-        var selectedChapter = $('#chapter_select :selected').val();
-        var selectedGroup = $('#group_select :selected').val();
-        console.debug(selectedOrganization);
+      pegasus('<%=find_update_chapters_path%>?organization_id=' + selectedOrganization + '&chapter_id=' + selectedChapter + '&group_id=' + selectedGroup)
+        .then(function (data) {
+          var chapters = data.chapters;
 
-        $.ajax({
-            url: '<%=find_update_chapters_path%>',
-            type: 'GET',
-            dataType: 'json',
-            data: {
-                organization_id: selectedOrganization,
-                chapter_id: selectedChapter,
-                group_id: selectedGroup
-            },
-            success: function (data) {
-                var chapters = data.chapters;
-                debugger;
+          $('#chapter_select').empty();
+          var opt = document.createElement('option');
+          opt.text = 'All';
+          $('#chapter_select').append(opt, null);
 
-                $('#chapter_select').empty();
-                var opt = document.createElement('option');
-                opt.text = 'All';
-                $('#chapter_select').append(opt, null);
+          for (i = 0; i < chapters.length; i++) {
+            var chapter = chapters[i];
 
-                for (i = 0; i < chapters.length; i++) {
-                    var chapter = chapters[i];
+            var opt = document.createElement('option');
+            opt.text = chapter.chapter_name;
+            opt.value = chapter.id;
 
-                    var opt = document.createElement('option');
-                    opt.text = chapter.chapter_name;
-                    opt.value = chapter.id;
-
-                    $('#chapter_select').append(opt, null);
-                }
-                $('#chapter_select').select(0);
-                $('#chapter_select').change();
-            },
-            error: function (data) {
-                debugger;
-            }
-        });
+            $('#chapter_select').append(opt, null);
+          }
+          $('#chapter_select').select(0);
+          $('#chapter_select').change();
+        },function (data) {
+        }
+      );
     });
     $('#chapter_select').change(function () {
+      var selectedOrganization = $('#organization_select :selected').val();
+      var selectedChapter = $('#chapter_select :selected').val();
+      var selectedGroup = $('#group_select :selected').val();
 
-        var selectedOrganization = $('#organization_select :selected').val();
-        var selectedChapter = $('#chapter_select :selected').val();
-        var selectedGroup = $('#group_select :selected').val();
+      pegasus('<%=find_update_groups_path%>?organization_id=' + selectedOrganization + '&chapter_id=' + selectedChapter + '&group_id=' + selectedGroup)
+        .then(function (data) {
+          var groups = data.groups;
 
-        $.ajax({
-            url: '<%=find_update_groups_path%>',
-            type: 'GET',
-            dataType: 'json',
-            data: {
-                organization_id: selectedOrganization,
-                chapter_id: selectedChapter,
-                group_id: selectedGroup
-            },
-            success: function (data) {
-                var groups = data.groups;
-                debugger;
+          $('#group_select').empty();
+          var opt = document.createElement('option');
+          opt.text = 'All';
 
-                $('#group_select').empty();
-                var opt = document.createElement('option');
-                opt.text = 'All';
+          $('#group_select').append(opt, null);
+          for (i = 0; i < groups.length; i++) {
+            var group = groups[i];
 
-                $('#group_select').append(opt, null);
-                for (i = 0; i < groups.length; i++) {
-                    var group = groups[i];
+            var opt = document.createElement('option');
+            opt.text = group.group_name;
+            opt.value = group.id;
 
-                    var opt = document.createElement('option');
-                    opt.text = group.group_name;
-                    opt.value = group.id;
-
-                    $('#group_select').append(opt, null);
-                }
-                $('#group_select').select(0);
-                $('#group_select').change();
-            },
-            error: function (data) {
-                debugger;
-            }
-        });
+            $('#group_select').append(opt, null);
+          }
+          $('#group_select').select(0);
+          $('#group_select').change();
+        }, function (data) {
+        }
+      );
     });
 
     $('#group_select').change(function () {
+      var selectedOrganization = $('#organization_select :selected').val();
+      var selectedChapter = $('#chapter_select :selected').val();
+      var selectedGroup = $('#group_select :selected').val();
 
-        var selectedOrganization = $('#organization_select :selected').val();
-        var selectedChapter = $('#chapter_select :selected').val();
-        var selectedGroup = $('#group_select :selected').val();
+      pegasus('<%=find_update_students_path%>?organization_id=' + selectedOrganization + '&chapter_id=' + selectedChapter + '&group_id=' + selectedGroup)
+        .then(function (data) {
+          var students = data.students;
 
-        $.ajax({
-            url: '<%=find_update_students_path%>',
-            type: 'GET',
-            dataType: 'json',
-            data: {
-                organization_id: selectedOrganization,
-                chapter_id: selectedChapter,
-                group_id: selectedGroup
-            },
-            success: function (data) {
-                var students = data.students;
-                debugger;
+          $('#student_select').empty();
+          var opt = document.createElement('option');
+          opt.text = 'All';
 
-                $('#student_select').empty();
-                var opt = document.createElement('option');
-                opt.text = 'All';
+          $('#student_select').append(opt, null);
+          for (i = 0; i < students.length; i++) {
+            var student = students[i];
 
-                $('#student_select').append(opt, null);
-                for (i = 0; i < students.length; i++) {
-                    var student = students[i];
+            var opt = document.createElement('option');
+            opt.text = student.last_name + ', ' + student.first_name;
+            opt.value = student.id;
 
-                    var opt = document.createElement('option');
-                    opt.text = student.last_name + ', ' + student.first_name;
-                    opt.value = student.id;
-
-                    $('#student_select').append(opt, null);
-                }
-            },
-            error: function (data) {
-                debugger;
-            }
-        });
+            $('#student_select').append(opt, null);
+          }
+        }, function (data) {
+        }
+      );
     });
 
     $(function () {
-
         var Chart2 = Highcharts.chart('chart2', {
             chart: {
                 type: 'column'
