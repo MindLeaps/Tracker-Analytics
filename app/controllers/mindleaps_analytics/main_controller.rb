@@ -162,13 +162,13 @@ module MindleapsAnalytics
 
       age = 13
 
-      regression_values = series.pluck(:data).map(&:length).max
+      # regression_values = series.pluck(:data).map(&:length).max
 
-      regression = Array.new(regression_values) do |index|
-        p_intercept + p_t1 * index + p_t2 * index**2 + p_t3 * index**3 + p_t4 * index**4 + p_age * age
-      end
+      # regression = Array.new(regression_values) do |index|
+      #   p_intercept + p_t1 * index + p_t2 * index**2 + p_t3 * index**3 + p_t4 * index**4 + p_age * age
+      # end
 
-      series << {name: t(:regression_curve), data: regression, color: '#FF0000', lineWidth: 1, marker: {enabled: false}}
+      # series << {name: t(:regression_curve), data: regression, color: '#FF0000', lineWidth: 1, marker: {enabled: false}}
       series
     end
 
@@ -353,11 +353,11 @@ module MindleapsAnalytics
 
       series_hash.each do |group, array|
         group_series = []
-        regression = regression_hash[group]
+        # regression = regression_hash[group]
 
-        regression.sort_by! {|a| a[0]}
+        # regression.sort_by! {|a| a[0]}
         group_series << {name: t(:group) + ' ' + group, data: array}
-        group_series << {name: t(:regression_curve), data: regression, color: '#FF0000', lineWidth: 1, marker: {enabled: false}}
+        # group_series << {name: t(:regression_curve), data: regression, color: '#FF0000', lineWidth: 1, marker: {enabled: false}}
         series << {group: t(:group) + ' ' + group, series: group_series}
       end
 
@@ -430,14 +430,14 @@ module MindleapsAnalytics
 
       # Calculation is done, now convert the series_hash to something HighCharts understands
       result.each do |skill_name, hash|
-        regression = RegressionService.new.skill_regression skill_name, hash.values.map(&:length).max
+        # regression = RegressionService.new.skill_regression skill_name, hash.values.map(&:length).max
 
         skill_series = []
         hash.each do |group, array|
           skill_series << {name: t(:group) + ' ' + group, data: array}
         end
 
-        skill_series << {name: t(:regression_curve), data: regression, color: '#FF0000', lineWidth: 1, marker: {enabled: false}}
+        # skill_series << {name: t(:regression_curve), data: regression, color: '#FF0000', lineWidth: 1, marker: {enabled: false}}
         series << {skill: skill_name, series: skill_series}
       end
       series
