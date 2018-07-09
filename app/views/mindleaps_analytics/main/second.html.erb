@@ -1,5 +1,7 @@
 <head>
   <script src="https://code.highcharts.com/highcharts.js"></script>
+  <script src="https://code.highcharts.com/modules/exporting.js"></script>
+  <script src="https://code.highcharts.com/modules/offline-exporting.js"></script>
 </head>
 
 <%- content_for :header_content do %>
@@ -181,6 +183,20 @@
                              (this.point.date ? '<br/><span>Lesson Date: ' + this.point.date + '</span>' : '');
                     }
                 },
+                exporting: {
+                  filename: dataset.skill + '-chart',
+                  buttons: {
+                    contextButton: {
+                      menuItems: [
+                        'downloadPNG',
+                        'downloadJPEG',
+                        'downloadPDF',
+                        'downloadSVG'
+                      ]
+                    }
+                  },
+                  fallbackToExportServer: false
+                },
                 title: {
                     text: dataset.skill
                 },
@@ -208,7 +224,6 @@
                     }
                 },
                 series: dataset.series
-
             }));
         });
     });
