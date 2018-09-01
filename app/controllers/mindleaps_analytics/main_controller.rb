@@ -332,20 +332,20 @@ module MindleapsAnalytics
         p_intercept = 3.909
 
         # No intercept value given bij Patrick, so we use the average over all the group values here (=3.5)
-        fitted << p_intercept + p_t1 * nr_of_lessons + p_t2 * nr_of_lessons**2 + p_t3 * nr_of_lessons**3 + p_t4 * nr_of_lessons**4 + p_age * age
+        # fitted << p_intercept + p_t1 * nr_of_lessons + p_t2 * nr_of_lessons**2 + p_t3 * nr_of_lessons**3 + p_t4 * nr_of_lessons**4 + p_age * age
 
         # Bug Tracker: TRACK-111 - Conflicts groups with same name from different chapters
         hash_key = lesson.group.chapter.chapter_name + ' ' + lesson.group.group_name
         if series_hash[hash_key] == nil
           series_hash[hash_key] = []
         end
-        if regression_hash[hash_key] == nil
-          regression_hash[hash_key] = []
-        end
+        # if regression_hash[hash_key] == nil
+        #   regression_hash[hash_key] = []
+        # end
 
         # add this point to the correct (meaning: this Group's) data series
         series_hash[hash_key] << point
-        regression_hash[hash_key] << fitted
+        # regression_hash[hash_key] << fitted
       end
 
       # Calculation is done, now convert the series_hash to something HighCharts understands
@@ -435,8 +435,12 @@ module MindleapsAnalytics
         # regression = RegressionService.new.skill_regression skill_name, hash.values.map(&:length).max
 
         skill_series = []
-        hash.each do |group, array|
-          skill_series << {name: t(:group) + ' ' + group, data: array}
+        hash.each_with_index do |(group, array), index|
+          skill_series << {name: "#{t(:group)} #{group}", data: array, color: get_color(index), regression: true, regressionSettings: {
+            color: get_color(index),
+            name: "#{t(:group)} #{group} - Regression",
+            lineWidth: 1
+          }}
         end
 
         # skill_series << {name: t(:regression_curve), data: regression, color: '#FF0000', lineWidth: 1, marker: {enabled: false}}
@@ -516,6 +520,14 @@ module MindleapsAnalytics
 
     def all_selected?(id_selected)
       id_selected.nil? || id_selected == '' || id_selected == 'All'
+    end
+
+    def colors
+      %w(#058DC7 #50B432 #ED561B #DDDF00 #24CBE5 #64E572 #FF9655 #FFF263 #6AF9C4)
+    end
+
+    def get_color(i)
+      colors[i % colors.length]
     end
   end
 end
