@@ -437,6 +437,8 @@ module MindleapsAnalytics
         skill_series = []
         hash.each_with_index do |(group, array), index|
           skill_series << {name: "#{t(:group)} #{group}", data: array, color: get_color(index), regression: true, regressionSettings: {
+            type: 'polynomial',
+            order: 4,
             color: get_color(index),
             name: "#{t(:group)} #{group} - Regression",
             lineWidth: 1
