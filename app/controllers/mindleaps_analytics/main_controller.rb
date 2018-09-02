@@ -132,10 +132,9 @@ module MindleapsAnalytics
       # figure 8: Average performance per group by days in program
       # Rebecca requested a Trellis per Group
       series8 = []
-      get_series_chart8(series8)
+      performance_per_group(series8)
       @count = series8.count
       @series8 = series8.to_json
-
     end
 
 
@@ -286,83 +285,22 @@ module MindleapsAnalytics
       series
     end
 
-    def get_series_chart8(series)
-
-      # top query
-      if not @selected_student_id.nil? and not @selected_student_id == '' and not @selected_student_id == 'All'
-        lessons = Lesson.includes(:grades).where(grades: {student_id: @selected_student_id})
-      elsif not @selected_group_id.nil? and not @selected_group_id == '' and not @selected_group_id == 'All'
-        lessons = Lesson.where(group_id: @selected_group_id)
-      elsif not @selected_chapter_id.nil? and not @selected_chapter_id == '' and not @selected_chapter_id == 'All'
-        lessons = Lesson.includes(:group).where(groups: {chapter_id: @selected_chapter_id})
-      elsif not @selected_organization_id.nil? and not @selected_organization_id == '' and not @selected_organization_id == 'All'
-        lessons = Lesson.includes(group: :chapter).where(chapters: {organization_id: @selected_organization_id})
+    def performance_per_group(series)
+      groups = if not @selected_chapter_id.nil? and not @selected_chapter_id == '' and not @selected_chapter_id == 'All'
+        Group.where(chapter_id: @selected_chapter_id)
+        # lessons = Lesson.joins(:grades).includes(:group).group('lessons.id').where(groups: {chapter_id: @selected_chapter_id})
       else
-        lessons = policy_scope Lesson
+        # lessons = Lesson.joins(:grades, group: :chapter).group('lessons.id').where(chapters: {organization_id: @selected_organization_id})
+        Group.joins(:chapter).where(chapters: {organization_id: @selected_organization_id})
       end
+      conn = ActiveRecord::Base.connection.raw_connection
 
-      # Hash to contain the groups series, so one entry per group
-      series_hash = Hash.new
-      regression_hash = Hash.new
-
-      # Calculate the average performance for this lesson and group
-      lessons.each do |lesson|
-        # Count the number of previous lessons for this group
-        nr_of_lessons = Lesson.where('group_id = :group_id AND date < :date_to',
-                                     {group_id: lesson.group_id, date_to: lesson.date}).distinct.count(:id)
-        # Determine the average group performance for this lesson
-        avg = Grade.where(lesson_id: lesson.id).joins(:grade_descriptor).average(:mark)
-
-        age = 13
-
-        point = []
-        point << nr_of_lessons
-        point << avg.to_f
-
-        # Prediction based on the regression model
-        fitted = []
-        fitted << nr_of_lessons
-        p_t1 = 0.05565
-        p_t2 = -0.00075043
-        p_t3 = 4.2898e-06
-        p_t4 = -8.4405e-09
-        p_age = 0.048271
-        # No intercept value given bij Patrick, so we use the average over all the group values here
-        # = Average(3,928; 3,7858; 4,012; 3,9965; 4,3559; 3,3744)
-        p_intercept = 3.909
-
-        # No intercept value given bij Patrick, so we use the average over all the group values here (=3.5)
-        # fitted << p_intercept + p_t1 * nr_of_lessons + p_t2 * nr_of_lessons**2 + p_t3 * nr_of_lessons**3 + p_t4 * nr_of_lessons**4 + p_age * age
-
-        # Bug Tracker: TRACK-111 - Conflicts groups with same name from different chapters
-        hash_key = lesson.group.chapter.chapter_name + ' ' + lesson.group.group_name
-        if series_hash[hash_key] == nil
-          series_hash[hash_key] = []
-        end
-        # if regression_hash[hash_key] == nil
-        #   regression_hash[hash_key] = []
-        # end
-
-        # add this point to the correct (meaning: this Group's) data series
-        series_hash[hash_key] << point
-        # regression_hash[hash_key] << fitted
-      end
-
-      # Calculation is done, now convert the series_hash to something HighCharts understands
-      # series_hash.each do |group, array|
-      #   series << {name: t(:group) + ' ' + group, data: array}
-      # end
-
-      series_hash.each do |group, array|
+      groups.each do |group|
         group_series = []
-        # regression = regression_hash[group]
-
-        # regression.sort_by! {|a| a[0]}
-        group_series << {name: t(:group) + ' ' + group, data: array}
-        # group_series << {name: t(:regression_curve), data: regression, color: '#FF0000', lineWidth: 1, marker: {enabled: false}}
-        series << {group: t(:group) + ' ' + group, series: group_series}
+        result = conn.exec(average_mark_in_group_lessons(group)).values
+        group_series << {name: group.group_chapter_name, data: result.map.with_index {|e, i| [i,e[1]]}}
+        series << {group: t(:group) + ' ' + group.group_chapter_name, series: group_series}
       end
-
     end
 
     def histogram_of_student_performance_change_by_gender
