@@ -183,9 +183,15 @@ module MindleapsAnalytics
         .select {|group_result| group_result[:result].length > 0}
         .map do |group_result|
           group_series = []
-          group_series << {name: group_result[:group_name], data: group_result[:result], regression: true, regressionSettings: {
+          group_series << {
+            name: group_result[:group_name],
+            data: group_result[:result],
+            regression: group_result[:result].length > 1,
+            color: get_color(0),
+            regressionSettings: {
               type: 'polynomial',
               order: 4,
+              color: get_color(0),
               name: "#{t(:group)} #{group_result[:group_name]} - Regression",
               lineWidth: 1
           }}
@@ -353,7 +359,8 @@ module MindleapsAnalytics
     end
 
     def colors
-      %w(#058DC7 #50B432 #ED561B #DDDF00 #24CBE5 #64E572 #FF9655 #FFF263 #6AF9C4)
+      %w(#7cb5ec #434348 #90ed7d #f7a35c #8085e9 #f15c80 #e4d354 #2b908f #f45b5b #91e8e1)
+      %w(#7cb5ec #434348 #90ed7d #f7a35c #8085e9 #f15c80 #e4d354 #2b908f #f45b5b #91e8e1)
     end
 
     def get_color(i)
