@@ -57,9 +57,10 @@ module MindleapsAnalytics
 
       @series10 = average_performance_per_group_by_lesson.to_json
 
-      @series9 = performance_data_for_each_student_versus_time_in_program.to_json
+      # Removed beacuse it wasn't used by MindLeaps
+      # @series9 = performance_data_for_each_student_versus_time_in_program.to_json
 
-      fresh_when etag: [@categories2, @series2, @series4, @series5, @series6, @series10, @series9]
+      fresh_when etag: [@categories2, @series2, @series4, @series5, @series6, @series10]
     end
 
     def second
@@ -131,8 +132,7 @@ module MindleapsAnalytics
 
       # figure 8: Average performance per group by days in program
       # Rebecca requested a Trellis per Group
-      series8 = []
-      performance_per_group(series8)
+      series8 = performance_per_group
       @count = series8.count
       @series8 = series8.to_json
     end
@@ -173,119 +173,7 @@ module MindleapsAnalytics
       series
     end
 
-    def performance_data_for_each_student_versus_time_in_program
-      series = []
-      # regression parameters
-      p_intercept = 3.31 # RegressionParameter.where(name: 'intercept').first.value
-      p_t1 = 0.0556501190994651 # RegressionParameter.where(name: 't1').first.value
-      p_t2 = -0.000750429285049042 # RegressionParameter.where(name: 't2').first.value
-      p_t3 = 4.28977790402216E-06 # RegressionParameter.where(name: 't3').first.value
-      p_t4 = -8.44049073102675E-09 # RegressionParameter.where(name: 't4').first.value
-      p_age = 0.0482714171873393 # RegressionParameter.where(name: 'age').first.value
-
-      if not @selected_student_id.nil? and not @selected_student_id == '' and not @selected_student_id == 'All'
-        lessons = Lesson.includes(:grades).where(grades: {student_id: @selected_student_id})
-        student = Student.find(@selected_student_id)
-        @groupname = '(' + t(:student) + ' ' + student.proper_name + ')'
-      elsif not @selected_group_id.nil? and not @selected_group_id == '' and not @selected_group_id == 'All'
-        group = Group.find(@selected_group_id)
-        chapter = group.chapter
-        organization = chapter.organization
-        orgname = organization.organization_name
-        chapname = chapter.chapter_name
-        groupname = group.group_name
-        @groupname = '(' + t(:group) + ' ' + orgname + ' - ' + chapname + ' - ' + groupname + ')'
-        lessons = Lesson.where(group_id: @selected_group_id)
-      elsif not @selected_chapter_id.nil? and not @selected_chapter_id == '' and not @selected_chapter_id == 'All'
-        chapter = Chapter.find(@selected_chapter_id)
-        organization = chapter.organization
-        group = chapter.groups.first
-        orgname = organization.organization_name
-        chapname = chapter.chapter_name
-        groupname = group.group_name
-        @groupname = '(' + t(:group) + ' ' + orgname + ' - ' + chapname + ' - ' + groupname + ')'
-        lessons = Lesson.includes(:group).where(group_id: group.id)
-        # lessons = Lesson.includes(:group).where(groups: {chapter_id: @selected_chapter_id})
-      elsif not @selected_organization_id.nil? and not @selected_organization_id == '' and not @selected_organization_id == 'All'
-        organization = Organization.find(@selected_organization_id)
-        chapter = organization.chapters.first
-        group = chapter.groups.first
-        orgname = organization.organization_name
-        chapname = chapter.chapter_name
-        groupname = group.group_name
-        @groupname = '(' + t(:group) + ' ' + orgname + ' - ' + chapname + ' - ' + groupname + ')'
-        lessons = Lesson.includes(:group).where(group_id: group.id)
-        # lessons = Lesson.includes(group: :chapter).where(chapters: {organization_id: @selected_organization_id})
-      else
-        organization = @organizations.first
-        chapter = organization.chapters.first
-        group = chapter.groups.first
-        orgname = organization.organization_name
-        chapname = chapter.chapter_name
-        groupname = group.group_name
-        @groupname = '(' + t(:group) + ' ' + orgname + ' - ' + chapname + ' - ' + groupname + ')'
-        lessons = Lesson.includes(:group).where(group_id: group.id)
-        # lessons = Lesson.all
-      end
-
-      performance_hash = {}
-      performance_hash[:above] = []
-      performance_hash[:below] = []
-
-      lessons.each do |lesson|
-        # Find the students who attended this lesson
-        if not @selected_student_id.nil? and not @selected_student_id == '' and not @selected_student_id == 'All'
-          students = Student.includes(:grades).where(grades: {lesson_id: lesson.id}, id: @selected_student_id)
-        else
-          students = Student.includes(:grades).select('distinct students.*').where(grades: {lesson_id: lesson.id})
-        end
-
-        students.each do |student|
-          avg = Grade.where(lesson_id: lesson.id, student_id: student.id).joins(:grade_descriptor).average(:mark)
-          # The number of lessons where this student participated in
-          # nr_of_lessons = Lesson.includes(:grades).where('date < :date_to',
-          #                                                {date_to: lesson.date}, grade: {student_id: student.id}).distinct.count(:id)
-          nr_of_lessons = Lesson.includes(:grades).where('date < :date_to',
-                                                         {date_to: lesson.date}).where(grades: {student_id: student.id}).distinct.count(:id)
-          # nr_of_lessons = Lesson.where('date < :date_to', {date_to: lesson.date}, group_id: student.group.id).distinct.count(:id)
-
-          dob = student.dob
-          now = lesson.date
-          age = now.year - dob.year - ((now.month > dob.month || (now.month == dob.month && now.day >= dob.day)) ? 0 : 1)
-
-          # Non-linear multivariate regression formula
-          performance = p_intercept
-          performance += p_t1 * nr_of_lessons
-          performance += p_t2 * nr_of_lessons**2
-          performance += p_t3 * nr_of_lessons**3
-          performance += p_t4 * nr_of_lessons**4
-          performance += p_age * age
-
-          point = {}
-          point[:name] = student.last_name + ', ' + student.first_name
-          point[:x] = nr_of_lessons
-          point[:y] = avg.to_f
-
-          if (avg >= performance)
-            performance_hash[:above] << point
-          else
-            performance_hash[:below] << point
-          end
-        end
-
-      end
-
-      performance_hash.each do |group, array|
-        if (group == :above)
-          series << {name: t(:above_regression), data: array}
-        else
-          series << {name: t(:below_regression), data: array}
-        end
-      end
-      series
-    end
-
-    def performance_per_group(series)
+    def performance_per_group
       groups = if not @selected_chapter_id.nil? and not @selected_chapter_id == '' and not @selected_chapter_id == 'All'
         Group.where(chapter_id: @selected_chapter_id)
         # lessons = Lesson.joins(:grades).includes(:group).group('lessons.id').where(groups: {chapter_id: @selected_chapter_id})
@@ -295,11 +183,11 @@ module MindleapsAnalytics
       end
       conn = ActiveRecord::Base.connection.raw_connection
 
-      groups.each do |group|
+      groups.map do |group|
         group_series = []
         result = conn.exec(average_mark_in_group_lessons(group)).values
         group_series << {name: group.group_chapter_name, data: result.map.with_index {|e, i| [i,e[1]]}}
-        series << {group: t(:group) + ' ' + group.group_chapter_name, series: group_series}
+        {group: t(:group) + ' ' + group.group_chapter_name, series: group_series}
       end
     end
 

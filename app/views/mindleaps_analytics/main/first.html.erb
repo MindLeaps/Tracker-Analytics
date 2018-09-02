@@ -58,9 +58,6 @@
     <td style="width: 50%;">
       <div id="chart10" style="width:100%; height:400px;"></div>
     </td>
-    <td style="width: 50%;">
-      <div id="chart9" style="width:100%; height:400px;"></div>
-    </td>
   </tr>
 </table>
 
@@ -374,64 +371,6 @@
                 }
             },
             series: <%= @series10.html_safe %>
-        });
-
-        var Chart9 = Highcharts.chart('chart9', {
-            chart: {
-                type: 'scatter'
-            },
-            legend: {
-                enabled: true
-            },
-            credits: {
-                enabled: false
-            },
-            tooltip: {
-                valueDecimals: 2,
-                formatter: function () {
-
-                    return "<span style='color:" + this.color + ";'>\u25CF</span><span style='font-size: smaller'> " + this.series.name + "</span><br/>"
-                        + this.point.name + "<br/>"
-                        + "x: <b>" + this.x + "</b><br/>"
-                        + "y: <b>" + Highcharts.numberFormat(this.y, 2) + "</b>";
-                },
-                useHTML: true
-            },
-            exporting: {
-              filename: 'perofmance-data-chart',
-              buttons: {
-                contextButton: {
-                  menuItems: [
-                    'downloadPNG',
-                    'downloadJPEG',
-                    'downloadPDF',
-                    'downloadSVG'
-                  ]
-                }
-              },
-              fallbackToExportServer: false
-            },
-            title: {
-                text: '<%= t(:title_chart_9) + ' ' + @groupname%>'
-            },
-            xAxis: {
-                title: {
-                    text: '<%= t(:nr_of_lessons) %>'
-                }
-            },
-            yAxis: {
-                title: {
-                    text: '<%= t(:performance) %>'
-                }
-            },
-            plotOptions: {
-                series: {
-                    marker: {
-                        radius: 2
-                    }
-                }
-            },
-            series: <%= @series9.html_safe %>
         });
     });
 </script>
