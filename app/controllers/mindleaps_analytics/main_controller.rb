@@ -178,12 +178,19 @@ module MindleapsAnalytics
       end
       conn = ActiveRecord::Base.connection.raw_connection
 
-      groups.map do |group|
-        group_series = []
-        result = conn.exec(average_mark_in_group_lessons(group)).values
-        group_series << {name: group.group_chapter_name, data: result}
-        {group: t(:group) + ' ' + group.group_chapter_name, series: group_series}
-      end
+      groups
+        .map {|group| {group_name: group.group_chapter_name, result: conn.exec(average_mark_in_group_lessons(group)).values}}
+        .select {|group_result| group_result[:result].length > 0}
+        .map do |group_result|
+          group_series = []
+          group_series << {name: group_result[:group_name], data: group_result[:result], regression: true, regressionSettings: {
+              type: 'polynomial',
+              order: 4,
+              name: "#{t(:group)} #{group_result[:group_name]} - Regression",
+              lineWidth: 1
+          }}
+          {group: t(:group) + ' ' + group_result[:group_name], series: group_series}
+        end
     end
 
     def histogram_of_student_performance_change_by_gender
