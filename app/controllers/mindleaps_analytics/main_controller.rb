@@ -143,12 +143,7 @@ module MindleapsAnalytics
 
       conn = ActiveRecord::Base.connection.raw_connection
       series = groups.map do |group|
-        result = conn.exec("select row_number() over (ORDER BY date) - 1, round(avg(mark), 2)::FLOAT
-                   from lessons as l
-                     join grades as g on l.id = g.lesson_id
-                     join grade_descriptors as gd on gd.id = g.grade_descriptor_id
-                   WHERE group_id = #{group.id}
-                   GROUP BY l.id;").values
+        result = conn.exec(average_mark_in_group_lessons(group)).values
         { name: "#{t(:group)} #{group.group_chapter_name}", data: result }
       end
 
@@ -186,7 +181,7 @@ module MindleapsAnalytics
       groups.map do |group|
         group_series = []
         result = conn.exec(average_mark_in_group_lessons(group)).values
-        group_series << {name: group.group_chapter_name, data: result.map.with_index {|e, i| [i,e[1]]}}
+        group_series << {name: group.group_chapter_name, data: result}
         {group: t(:group) + ' ' + group.group_chapter_name, series: group_series}
       end
     end

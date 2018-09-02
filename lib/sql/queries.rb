@@ -53,12 +53,11 @@ module SQL
 
   def average_mark_in_group_lessons(group)
     <<~SQL
-      select date, avg(mark)::FLOAT from lessons as l
+      select row_number() over (ORDER BY date) - 1, round(avg(mark), 2)::FLOAT from lessons as l
         join grades as g on g.lesson_id = l.id
         join grade_descriptors as gd on g.grade_descriptor_id = gd.id
       where group_id = #{group.id}
-      group by l.id
-      order by l.date;
+      group by l.id;
     SQL
   end
 end
