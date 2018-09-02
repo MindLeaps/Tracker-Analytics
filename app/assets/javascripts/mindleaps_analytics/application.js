@@ -10,4 +10,9 @@
 // Read Sprockets README (https://github.com/rails/sprockets#sprockets-directives) for details
 // about supported directives.
 //
+//= require optimized-highcharts
+//= require optimized-exporting
+//= require optimized-offline-exporting
+//= require optimized-regression
+
 //= require_tree .
