@@ -47,18 +47,7 @@ module MindleapsAnalytics
       if @selected_students.blank?
         res = []
       else
-        res = conn.exec("select COALESCE(rounded, 0)::INT as mark, count(*) * 100 / (sum(count(*)) over ())::FLOAT as percentage
-                            from (select s.id, round(avg(mark)) as rounded
-                                  from students as s
-                                    left join grades as g
-                                      on s.id = g.student_id
-                                    left join grade_descriptors as gd
-                                      on gd.id = g.grade_descriptor_id
-                                  WHERE s.id IN (#{@selected_students.pluck(:id).join(', ')})
-                                  GROUP BY s.id
-                            ) as student_round_mark
-                          GROUP BY mark
-                          ORDER BY mark;").values
+        res = conn.exec(student_performance_query(@selected_students)).values
       end
 
       [{name: t(:frequency_perc), data: res}]

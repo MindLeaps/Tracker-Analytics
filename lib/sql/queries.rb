@@ -13,6 +13,23 @@ module SQL
     SQL
   end
 
+  def student_performance_query(students)
+    <<~SQL
+      select COALESCE(rounded, 0)::INT as mark, count(*) * 100 / (sum(count(*)) over ())::FLOAT as percentage
+        from (select s.id, round(avg(mark)) as rounded
+              from students as s
+                left join grades as g
+                  on s.id = g.student_id
+                left join grade_descriptors as gd
+                  on gd.id = g.grade_descriptor_id
+              WHERE s.id IN (#{students.pluck(:id).join(', ')}) AND s.deleted_at IS NULL AND g.deleted_at IS NULL
+              GROUP BY s.id
+        ) as student_round_mark
+      GROUP BY mark
+      ORDER BY mark;
+    SQL
+  end
+
   def performance_change_query(students)
     <<~SQL
       with w1 AS (
