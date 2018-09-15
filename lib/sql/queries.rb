@@ -20,7 +20,8 @@ module SQL
             s.id as student_id,
             l.id as lesson_id,
             date,
-            avg(mark)
+            avg(mark),
+            count(*) over (partition by s.id) as lesson_count
           FROM students AS s
             JOIN grades AS g
               ON s.id = g.student_id
@@ -28,20 +29,20 @@ module SQL
               ON l.id = g.lesson_id
             JOIN grade_descriptors AS gd
               ON gd.id = g.grade_descriptor_id
-          WHERE s.id IN (#{students.pluck(:id).join(', ')})
+          WHERE s.id IN (#{students.pluck(:id).join(', ')}) AND g.deleted_at IS NULL AND s.deleted_at IS NULL
           GROUP BY s.id, l.id
       ),
       min_table AS (
-          SELECT * from w1 s1 WHERE (student_id, date) IN (
+          SELECT * from w1 s1 WHERE ((student_id, date) IN (
             SELECT student_id, MIN(date) FROM w1
             GROUP BY student_id
-          ) OR date is null
+          ) OR date is null) AND lesson_count >= 10
       ),
       max_table AS (
-        SELECT * from w1 s1 WHERE (student_id, date) IN (
+        SELECT * from w1 s1 WHERE ((student_id, date) IN (
           SELECT student_id, MAX(date) FROM w1
           GROUP BY student_id
-        ) OR date is null
+        ) OR date is null) AND lesson_count >= 10
       )
       SELECT COALESCE(floor(((max_table.avg - min_table.avg) * 2) + 0.5) / 2, 0)::FLOAT as diff, count(*) * 100 / (SUM(count(*)) over ())::FLOAT FROM max_table
         JOIN min_table
@@ -56,7 +57,7 @@ module SQL
       select row_number() over (ORDER BY date) - 1, round(avg(mark), 2)::FLOAT from lessons as l
         join grades as g on g.lesson_id = l.id
         join grade_descriptors as gd on g.grade_descriptor_id = gd.id
-      where group_id = #{group.id}
+      where group_id = #{group.id} AND g.deleted_at IS NULL
       group by l.id;
     SQL
   end

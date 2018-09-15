@@ -1,9 +1,5 @@
 module MindleapsAnalytics
   module ApplicationHelper
-    def general_analytics_url
-      url_for controller: 'main', action: :first
-    end
-
     def subject_analytics_url
       url_for controller: 'main', action: :second
     end

@@ -1,9 +1,5 @@
 MindleapsAnalytics::Engine.routes.draw do
-
-  resources :regression_parameters
-  get 'main/first'
-
-  post 'main/first'
+  match 'general' => 'general#index', via: [:get, :post], as: :general_analytics
 
   get 'main/second'
 
@@ -21,5 +17,5 @@ MindleapsAnalytics::Engine.routes.draw do
 
   get 'find/update_subjects'
 
-  root to: 'main#first'
+  root to: 'general#index'
 end
