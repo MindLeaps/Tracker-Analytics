@@ -2,8 +2,6 @@ require_dependency "mindleaps_analytics/application_controller"
 
 module MindleapsAnalytics
   class FindController < ApplicationController
-    skip_after_action :verify_authorized
-
     def update_chapters
       if params[:organization_id] and not params[:organization_id] == '' and not params[:organization_id] == 'All'
         chapters = policy_scope Chapter.where(organization_id: params[:organization_id])
@@ -53,6 +51,5 @@ module MindleapsAnalytics
         format.json { render json: subjects, fields: [:id, :subject_name], include: [] }
       end
     end
-
   end
 end
