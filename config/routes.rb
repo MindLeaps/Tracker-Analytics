@@ -1,9 +1,7 @@
 MindleapsAnalytics::Engine.routes.draw do
   match 'general' => 'general#index', via: [:get, :post], as: :general_analytics
 
-  get 'main/second'
-
-  post 'main/second'
+  match 'subject' => 'subject#index', via: [:get, :post], as: :subject_analytics
 
   get 'main/third'
 

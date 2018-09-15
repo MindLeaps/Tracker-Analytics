@@ -25,5 +25,14 @@ module MindleapsAnalytics
     def all_selected?(id_selected)
       id_selected.nil? || id_selected == '' || id_selected == 'All'
     end
+
+    def colors
+      %w(#7cb5ec #434348 #90ed7d #f7a35c #8085e9 #f15c80 #e4d354 #2b908f #f45b5b #91e8e1)
+      %w(#7cb5ec #434348 #90ed7d #f7a35c #8085e9 #f15c80 #e4d354 #2b908f #f45b5b #91e8e1)
+    end
+
+    def get_color(i)
+      colors[i % colors.length]
+    end
   end
 end
