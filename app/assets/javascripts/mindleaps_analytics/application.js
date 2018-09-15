@@ -10,6 +10,7 @@
 // Read Sprockets README (https://github.com/rails/sprockets#sprockets-directives) for details
 // about supported directives.
 //
+//= require pegasus
 //= require optimized-highcharts
 //= require optimized-exporting
 //= require optimized-offline-exporting
