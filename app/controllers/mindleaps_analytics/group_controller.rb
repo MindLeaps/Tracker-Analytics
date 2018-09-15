@@ -3,8 +3,8 @@ require 'sql/queries'
 include SQL
 
 module MindleapsAnalytics
-  class MainController < ApplicationController
-    def third
+  class GroupController < ApplicationController
+    def index
       @subject = params[:subject_select]
 
       @organizations = policy_scope Organization

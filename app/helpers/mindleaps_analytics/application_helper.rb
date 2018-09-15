@@ -1,9 +1,5 @@
 module MindleapsAnalytics
   module ApplicationHelper
-    def group_analytics_url
-      url_for controller: 'main', action: :third
-    end
-
     def general_analytics?
       current_page?(general_analytics_url) || current_page?(root_url) || request.fullpath == general_analytics_url
     end

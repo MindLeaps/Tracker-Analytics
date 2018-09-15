@@ -3,9 +3,7 @@ MindleapsAnalytics::Engine.routes.draw do
 
   match 'subject' => 'subject#index', via: [:get, :post], as: :subject_analytics
 
-  get 'main/third'
-
-  post 'main/third'
+  match 'group' => 'group#index', via: [:get, :post], as: :group_analytics
 
   get 'find/update_chapters'
 

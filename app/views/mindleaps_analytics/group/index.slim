@@ -1,42 +1,31 @@
-<head>
-  <%= javascript_include_tag 'mindleaps_analytics/application' %>
-</head>
+head
+  = javascript_include_tag 'mindleaps_analytics/application'
 
-<%- content_for :header_content do %>
-  <%= render partial: '/shared/header_content', locals: { title: 'Group Analytics' } %>
-<%- end %>
+= content_for :header_content do
+  = render partial: '/shared/header_content', locals: { title: 'General Analytics' }
 
-<%= render 'mindleaps_analytics/shared/tabs' %>
+= render 'mindleaps_analytics/shared/tabs'
 
-<%= form_tag do %>
-    <table>
-      <tr>
-        <td style="padding-right: 20px;">
-          <%= label_tag :organization_label, "Organization" %>
-          <%= select_tag :organization_select, options_from_collection_for_select(@organizations, :id, :organization_name, @selected_organization_id), :prompt => 'All' %>
-        </td>
-        <td style="padding-right: 20px;">
-          <%= label_tag :chapter_label, "Chapter" %>
-          <%= select_tag :chapter_select, options_from_collection_for_select(@chapters, :id, :chapter_name, @selected_chapter_id), :prompt => 'All' %>
-        </td>
-        <td style="padding-right: 20px;">
-          <%= submit_tag "Submit" %>
-        </td>
-      </tr>
-    </table>
-<% end %>
+= form_tag do
+  table
+    tr
+      td style="padding-right: 20px;"
+        = label_tag :organization_label, "Organization"
+        = select_tag :organization_select, options_from_collection_for_select(@organizations, :id, :organization_name, @selected_organization_id), :prompt => 'All'
+      td style="padding-right: 20px;"
+        = label_tag :chapter_label, "Chapter"
+        = select_tag :chapter_select, options_from_collection_for_select(@chapters, :id, :chapter_name, @selected_chapter_id), :prompt => 'All'
+      td style="padding-right: 20px;"
+        = submit_tag "Submit"
 
-<table id="trellis" style="width: 100%; table-layout: fixed;">
-  <% rows = (@count + 1)/2 %>
-  <% rows.times do %>
-      <tr>
-        <td></td>
-        <td></td>
-      </tr>
-  <% end %>
-</table>
+table id="trellis" style="width: 100%; table-layout: fixed;"
+  - rows = (@count + 1)/2
+  - rows.times do
+    tr
+      td
+      td
 
-<script>
+javascript:
   //0.3.5
   function pegasus(a,b,c){return c=new XMLHttpRequest,c.open("GET",a),a=[],pegasus.timeout&&(c.timeout=pegasus.timeout),c.ontimeout=function(a){b=a},c.onreadystatechange=c.then=function(d,e,f,g){if(d&&d.call&&(a=[,d,e]),b&&a[2]&&a[2](b,c),4==c.readyState&&(f=a[0|c.status/200])){try{g=JSON.parse(c.responseText)}catch(a){g=null}f(g,c)}},c.send(),c}
 
@@ -45,7 +34,7 @@
         var selectedChapter = $('#chapter_select :selected').val();
         var selectedGroup = $('#group_select :selected').val();
 
-      pegasus('<%=find_update_chapters_path%>?organization_id=' + selectedOrganization + '&chapter_id=' + selectedChapter + '&group_id=' + selectedGroup)
+      pegasus('#{{find_update_chapters_path}}?organization_id=' + selectedOrganization + '&chapter_id=' + selectedChapter + '&group_id=' + selectedGroup)
         .then(function (data) {
             var chapters = data.chapters;
 
@@ -73,7 +62,7 @@
     $(function () {
         var charts = [],
             $containers = $('#trellis td'),
-            datasets = <%= @series8.html_safe %>;
+            datasets = #{{ @series8.html_safe }};
 
         $.each(datasets, function (i, dataset) {
             charts.push(new Highcharts.Chart({
@@ -108,13 +97,13 @@
                 },
                 xAxis: {
                     title: {
-                        text: '<%= t(:nr_of_lessons) %>'
+                        text: '#{{ t(:nr_of_lessons) }}'
                     }
                 },
                 yAxis: {
                     allowDecimals: false,
                     title: {
-                        text: '<%= t(:performance)%>'
+                        text: '#{{ t(:performance)}}'
                     }
                 },
                 legend: {
