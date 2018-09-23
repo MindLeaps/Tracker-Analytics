@@ -1,7 +1,0 @@
-<div class="mdl-tabs mdl-js-tabs mdl-js-ripple-effect">
-  <div class="mdl-tabs__tab-bar">
-    <a <%= href_to(general_analytics_url) unless general_analytics? %> class="mdl-tabs__tab <%= general_analytics? ? 'is-active' :'' %>">General</a>
-    <a <%= href_to(subject_analytics_url) unless subject_analytics? %> class="mdl-tabs__tab <%= subject_analytics? ? 'is-active' :'' %>">Subject</a>
-    <a <%= href_to(group_analytics_url) unless group_analytics? %> class="mdl-tabs__tab <%= group_analytics? ? 'is-active' :'' %>">Group</a>
-  </div>
-</div>
