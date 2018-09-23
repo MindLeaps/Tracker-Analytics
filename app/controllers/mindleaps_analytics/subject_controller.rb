@@ -9,31 +9,31 @@ module MindleapsAnalytics
 
       @organizations = policy_scope Organization
       if not @selected_organization_id.nil? and not @selected_organization_id == '' and not @selected_organization_id == 'All'
-        @chapters = Chapter.where(organization_id: @selected_organization_id)
+        @chapters = policy_scope Chapter.where(organization_id: @selected_organization_id)
       else
         @chapters = policy_scope Chapter
       end
 
       if not @selected_group_id.nil? and not @selected_group_id == '' and not @selected_group_id == 'All'
-        @groups = Group.where(chapter_id: @selected_chapter_id)
+        @groups = policy_scope Group.where(chapter_id: @selected_chapter_id)
       elsif not @selected_organization_id.nil? and not @selected_organization_id == '' and not @selected_organization_id == 'All'
-        @groups = Group.includes(:chapter).where(chapters: {organization_id: @selected_organization_id})
+        @groups = policy_scope Group.includes(:chapter).where(chapters: {organization_id: @selected_organization_id})
       else
         @groups = policy_scope Group
       end
 
       if not @selected_group_id.nil? and not @selected_group_id == '' and not @selected_group_id == 'All'
-        @students = Student.where(group_id: @selected_group_id).order(:last_name, :first_name).all
+        @students = policy_scope Student.where(group_id: @selected_group_id).order(:last_name, :first_name)
       elsif not @selected_chapter_id.nil? and not @selected_chapter_id == '' and not @selected_chapter_id == 'All'
-        @students = Student.includes(:group).where(groups: {chapter_id: @selected_chapter_id}).order(:last_name, :first_name).all
+        @students = policy_scope Student.includes(:group).where(groups: {chapter_id: @selected_chapter_id}).order(:last_name, :first_name)
       elsif not @selected_organization_id.nil? and not @selected_organization_id == '' and not @selected_organization_id == 'All'
-        @students = Student.includes(group: :chapter).where(chapters: {organization_id: @selected_organization_id}).order(:last_name, :first_name).all
+        @students = policy_scope Student.includes(group: :chapter).where(chapters: {organization_id: @selected_organization_id}).order(:last_name, :first_name)
       else
-        @students = Student.order(:last_name, :first_name).all
+        @students = policy_scope Student.order(:last_name, :first_name)
       end
 
       if not @selected_organization_id.nil? and not @selected_organization_id == '' and not @selected_organization_id == 'All'
-        @subjects = Subject.where(organization: @selected_organization_id)
+        @subjects = policy_scope Subject.where(organization: @selected_organization_id)
       else
         @subjects = policy_scope Subject
       end
