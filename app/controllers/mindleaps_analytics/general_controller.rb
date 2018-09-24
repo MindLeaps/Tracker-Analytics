@@ -37,7 +37,6 @@ module MindleapsAnalytics
       @series5 = histogram_of_student_performance_change.to_json
       @series6 = histogram_of_student_performance_change_by_gender.to_json
       @series10 = average_performance_per_group_by_lesson.to_json
-      fresh_when etag: [@categories2, @series2, @series4, @series5, @series6, @series10]
     end
 
     private
