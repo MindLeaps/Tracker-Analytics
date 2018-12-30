@@ -1,4 +1,5 @@
-head
+= content_for :head_content
+  meta name="turbolinks-cache-control" content="no-cache"
   = javascript_include_tag 'mindleaps_analytics/application'
 
 = content_for :header_content do
@@ -27,9 +28,9 @@ table id="trellis" style="width: 100%; table-layout: fixed;"
 
 javascript:
   $('#organization_select').change(function () {
-      var selectedOrganization = $('#organization_select :selected').val();
-      var selectedChapter = $('#chapter_select :selected').val();
-      var selectedGroup = $('#group_select :selected').val();
+    var selectedOrganization = $('#organization_select :selected').val();
+    var selectedChapter = $('#chapter_select :selected').val();
+    var selectedGroup = $('#group_select :selected').val();
 
     pegasus('#{{find_update_chapters_path}}?organization_id=' + selectedOrganization + '&chapter_id=' + selectedChapter + '&group_id=' + selectedGroup)
       .then(function (data) {
@@ -56,7 +57,7 @@ javascript:
       );
   });
 
-  $(function () {
+  function startAnalytics() {
       var charts = [],
           $containers = $('#trellis td'),
           datasets = #{{ @series8.html_safe }};
@@ -117,4 +118,6 @@ javascript:
 
           }));
       });
-  });
+  }
+
+  document.addEventListener("turbolinks:load", function() {setTimeout(startAnalytics, 1)});

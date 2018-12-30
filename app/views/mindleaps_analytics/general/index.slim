@@ -1,4 +1,5 @@
-head
+= content_for :head_content
+  meta name="turbolinks-cache-control" content="no-cache"
   = javascript_include_tag 'mindleaps_analytics/application'
 
 = content_for :header_content do
@@ -127,7 +128,7 @@ javascript:
     );
   });
 
-  $(function () {
+  function startAnalytics() {
       var Chart2 = Highcharts.chart('chart2', {
           chart: {
               type: 'column',
@@ -349,4 +350,6 @@ javascript:
           },
           series: #{{ @series10.html_safe }}
       });
-  });
+  }
+
+  document.addEventListener("turbolinks:load", function() {setTimeout(startAnalytics, 1)});
