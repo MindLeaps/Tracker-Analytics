@@ -352,4 +352,12 @@ javascript:
       });
   }
 
-  document.addEventListener("turbolinks:load", function() {setTimeout(startAnalytics, 1)});
+  function pollForHighcharts (cb) {
+    if (window.Highcharts) {
+      cb()
+    } else {
+      setTimeout(pollForHighcharts.bind(this, cb), 100);
+    }
+  }
+
+  document.addEventListener("turbolinks:load", function() {pollForHighcharts(startAnalytics)});
