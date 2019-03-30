@@ -5,8 +5,7 @@ module SQL
           lessons as l
           join groups as gr on gr.id = l.group_id
           join grades as g on l.id = g.lesson_id
-          join grade_descriptors as gd on gd.id = g.grade_descriptor_id
-          join skills as s on s.id = gd.skill_id
+          join skills as s on s.id = g.skill_id
         WHERE l.id IN (#{lessons.pluck(:id).join(', ')})
         GROUP BY gr.id, l.id, s.id
         ORDER BY gr.id, date, s.id;
@@ -20,8 +19,6 @@ module SQL
               from students as s
                 left join grades as g
                   on s.id = g.student_id
-                left join grade_descriptors as gd
-                  on gd.id = g.grade_descriptor_id
               WHERE s.id IN (#{students.pluck(:id).join(', ')}) AND s.deleted_at IS NULL AND g.deleted_at IS NULL
               GROUP BY s.id
         ) as student_round_mark
@@ -44,8 +41,6 @@ module SQL
               ON s.id = g.student_id
             JOIN lessons AS l
               ON l.id = g.lesson_id
-            JOIN grade_descriptors AS gd
-              ON gd.id = g.grade_descriptor_id
           WHERE s.id IN (#{students.pluck(:id).join(', ')}) AND g.deleted_at IS NULL AND s.deleted_at IS NULL
           GROUP BY s.id, l.id
       ),
@@ -73,7 +68,6 @@ module SQL
     <<~SQL
       select row_number() over (ORDER BY date) - 1, round(avg(mark), 2)::FLOAT from lessons as l
         join grades as g on g.lesson_id = l.id
-        join grade_descriptors as gd on g.grade_descriptor_id = gd.id
       where group_id = #{group.id} AND g.deleted_at IS NULL
       group by l.id;
     SQL
